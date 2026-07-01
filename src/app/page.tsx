@@ -3,13 +3,51 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { db, Book, ReadingLog, ReadingGoals, isLocalSandbox, setSandboxMode } from "@/utils/db";
-import { Sidebar } from "@/components/Sidebar";
-import { Dashboard } from "@/components/Dashboard";
-import { Library } from "@/components/Library";
-import { Wishlist } from "@/components/Wishlist";
-import { History } from "@/components/History";
-import { CalendarView } from "@/components/CalendarView";
-import { Analytics } from "@/components/Analytics";
+import dynamic from "next/dynamic";
+
+const Sidebar = dynamic(() => import("@/components/Sidebar").then((mod) => mod.Sidebar), {
+  loading: () => <div className="w-64 bg-slate-950 animate-pulse border-r border-white/5 hidden md:block" />,
+  ssr: false,
+});
+
+const Dashboard = dynamic(() => import("@/components/Dashboard").then((mod) => mod.Dashboard), {
+  loading: () => (
+    <div className="flex flex-col gap-6 w-full animate-pulse">
+      <div className="h-32 bg-white/5 rounded-3xl" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="h-64 bg-white/5 rounded-3xl md:col-span-2" />
+        <div className="h-64 bg-white/5 rounded-3xl" />
+      </div>
+    </div>
+  ),
+  ssr: false,
+});
+
+const Library = dynamic(() => import("@/components/Library").then((mod) => mod.Library), {
+  loading: () => <div className="w-full h-[60vh] bg-white/5 rounded-3xl animate-pulse" />,
+  ssr: false,
+});
+
+const Wishlist = dynamic(() => import("@/components/Wishlist").then((mod) => mod.Wishlist), {
+  loading: () => <div className="w-full h-[60vh] bg-white/5 rounded-3xl animate-pulse" />,
+  ssr: false,
+});
+
+const History = dynamic(() => import("@/components/History").then((mod) => mod.History), {
+  loading: () => <div className="w-full h-[60vh] bg-white/5 rounded-3xl animate-pulse" />,
+  ssr: false,
+});
+
+const CalendarView = dynamic(() => import("@/components/CalendarView").then((mod) => mod.CalendarView), {
+  loading: () => <div className="w-full h-[60vh] bg-white/5 rounded-3xl animate-pulse" />,
+  ssr: false,
+});
+
+const Analytics = dynamic(() => import("@/components/Analytics").then((mod) => mod.Analytics), {
+  loading: () => <div className="w-full h-[60vh] bg-white/5 rounded-3xl animate-pulse" />,
+  ssr: false,
+});
+
 import { AuthPortal } from "@/components/AuthPortal";
 import { AddBookModal, DailyLogModal } from "@/components/BookForms";
 import { useNotifications } from "@/components/Notifications";
