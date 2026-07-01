@@ -47,11 +47,13 @@ export default function RootPage() {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      const explicitSandbox = localStorage.getItem("bookvault_use_local") === "true";
+      
       if (session) {
         localStorage.setItem("bookvault_session_active", "true");
         setSandboxMode(false);
         setAuthenticated(true);
-      } else if (isLocalSandbox()) {
+      } else if (explicitSandbox) {
         setAuthenticated(true);
       } else {
         setAuthenticated(false);
@@ -62,6 +64,7 @@ export default function RootPage() {
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const explicitSandbox = localStorage.getItem("bookvault_use_local") === "true";
       if (session) {
         localStorage.setItem("bookvault_session_active", "true");
         setSandboxMode(false);
@@ -69,7 +72,7 @@ export default function RootPage() {
         loadAppData();
       } else {
         // If logged out but NOT explicitly using sandbox
-        if (!isLocalSandbox()) {
+        if (!explicitSandbox) {
           setAuthenticated(false);
         }
       }
