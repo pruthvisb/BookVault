@@ -508,9 +508,9 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onAuthSuccess }) => {
               <form onSubmit={handleEmailAuth} className="space-y-4">
                 {isSignUp && (
                   <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="space-y-4 overflow-hidden mb-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-4 mb-2"
                   >
                     <div>
                       <label className="text-slate-350 text-xs font-semibold block mb-1.5 pl-1">
