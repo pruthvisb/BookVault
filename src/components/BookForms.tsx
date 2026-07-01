@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Book, ReadingLog } from "@/utils/db";
-import { X, Upload, BookOpen, Clock, Tag, Link2, DollarSign } from "lucide-react";
+import { X, Upload, BookOpen, Clock, Tag, Link2, IndianRupee } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AddBookModalProps {
@@ -352,7 +352,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                   <div>
                     <label className="text-slate-300 text-xs font-semibold block mb-1.5">Price Paid (₹)</label>
                     <div className="relative">
-                      <DollarSign className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <IndianRupee className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="number"
                         step="0.01"
@@ -391,9 +391,9 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                   className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-white/5 pt-4"
                 >
                   <div>
-                    <label className="text-slate-300 text-xs font-semibold block mb-1.5">Price ($)</label>
+                    <label className="text-slate-300 text-xs font-semibold block mb-1.5">Price (₹)</label>
                     <div className="relative">
-                      <DollarSign className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <IndianRupee className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="number"
                         step="0.01"
