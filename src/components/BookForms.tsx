@@ -474,15 +474,17 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                     />
                   </div>
 
-                  <div>
-                    <label className="text-slate-300 text-xs font-semibold block mb-1.5">Purchase Date</label>
-                    <input
-                      type="date"
-                      value={purchaseDate}
-                      onChange={(e) => setPurchaseDate(e.target.value)}
-                      className="w-full px-4 py-2 text-xs glass-input bg-slate-900"
-                    />
-                  </div>
+                  {status !== "Wishlist" && (
+                    <div>
+                      <label className="text-slate-300 text-xs font-semibold block mb-1.5">Purchase Date</label>
+                      <input
+                        type="date"
+                        value={purchaseDate}
+                        onChange={(e) => setPurchaseDate(e.target.value)}
+                        className="w-full px-4 py-2 text-xs glass-input bg-slate-900"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>

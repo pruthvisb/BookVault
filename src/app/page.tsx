@@ -139,7 +139,47 @@ export default function RootPage() {
       const loadedLogs = await db.getReadingLogs();
       const loadedGoals = await db.getGoals();
 
-      setBooks(loadedBooks);
+      // Check for ordered books that reached estimated delivery date
+      const localDate = new Date();
+      const year = localDate.getFullYear();
+      const month = String(localDate.getMonth() + 1).padStart(2, '0');
+      const day = String(localDate.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
+
+      const updatedBooksList = [...loadedBooks];
+      let didUpdate = false;
+
+      for (let i = 0; i < updatedBooksList.length; i++) {
+        const book = updatedBooksList[i];
+        if (book.status === "Wishlist" && book.notes) {
+          const match = book.notes.match(/\[ORDER_INFO:(.*?)\|(.*?)\]/);
+          if (match) {
+            const orderDateVal = match[1];
+            const estDelivery = match[2];
+            // If today is on or after the estimated delivery date
+            if (estDelivery && todayStr >= estDelivery) {
+              const cleanNotes = book.notes.replace(/\[ORDER_INFO:.*?\]\s*/, "");
+              const updatedBook = await db.updateBook(book.id, {
+                status: "Not Started",
+                current_page: 0,
+                purchase_date: estDelivery,
+                notes: cleanNotes,
+                date_started: todayStr,
+              });
+              if (updatedBook) {
+                updatedBooksList[i] = updatedBook;
+                didUpdate = true;
+              }
+            }
+          }
+        }
+      }
+
+      if (didUpdate) {
+        setBooks(updatedBooksList);
+      } else {
+        setBooks(loadedBooks);
+      }
       setReadingLogs(loadedLogs);
       setGoals(loadedGoals);
     } catch (err) {

@@ -12,8 +12,11 @@ import {
   BookmarkPlus,
   BookOpen,
   Tag,
+  Clock,
+  X,
+  Calendar,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface WishlistProps {
   books: Book[];
@@ -30,6 +33,9 @@ export const Wishlist: React.FC<WishlistProps> = ({
 }) => {
   const wishlistBooks = books.filter((b) => b.status === "Wishlist");
   const [search, setSearch] = useState("");
+  const [selectedOrderBook, setSelectedOrderBook] = useState<Book | null>(null);
+  const [orderDate, setOrderDate] = useState(new Date().toISOString().split("T")[0]);
+  const [deliveryDate, setDeliveryDate] = useState("");
 
   const filteredBooks = wishlistBooks.filter(
     (book) =>
@@ -137,16 +143,23 @@ export const Wishlist: React.FC<WishlistProps> = ({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBooks.map((book) => (
-            <motion.div
-              key={book.id}
-              layout
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="rounded-3xl border border-white/5 glass-card overflow-hidden flex flex-col justify-between h-full"
-            >
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredBooks.map((book) => {
+            const matchOrder = book.notes ? book.notes.match(/\[ORDER_INFO:(.*?)\|(.*?)\]/) : null;
+            const isOrdered = !!matchOrder;
+            const orderDateVal = matchOrder ? matchOrder[1] : "";
+            const estDeliveryDate = matchOrder ? matchOrder[2] : "";
+            const cleanNotes = book.notes ? book.notes.replace(/\[ORDER_INFO:.*?\]\s*/, "") : "";
+
+            return (
+              <motion.div
+                key={book.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="rounded-3xl border border-white/5 glass-card overflow-hidden flex flex-col justify-between h-full"
+              >
               {/* Cover & details */}
               <div className="p-5 flex gap-4 border-b border-white/5">
                 <div
@@ -204,9 +217,9 @@ export const Wishlist: React.FC<WishlistProps> = ({
                   </a>
                 )}
 
-                {book.notes && (
+                {cleanNotes && (
                   <p className="text-[11px] text-slate-500 italic line-clamp-2 border-t border-white/5 pt-2">
-                    "{book.notes}"
+                    "{cleanNotes}"
                   </p>
                 )}
               </div>
@@ -222,27 +235,132 @@ export const Wishlist: React.FC<WishlistProps> = ({
                 </button>
 
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleMoveToLibrary(book.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 text-[11px] font-bold hover:bg-indigo-500/20 transition-all cursor-pointer"
-                  >
-                    <BookmarkPlus className="h-3.5 w-3.5" />
-                    <span>Library</span>
-                  </button>
+                  {isOrdered ? (
+                    <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20" title={`Ordered on ${orderDateVal}`}>
+                      <Clock className="h-3.5 w-3.5 text-emerald-400 mr-1 animate-pulse" />
+                      <span>Est: {estDeliveryDate}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleMoveToLibrary(book.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 text-[11px] font-bold hover:bg-indigo-500/20 transition-all cursor-pointer"
+                      >
+                        <BookmarkPlus className="h-3.5 w-3.5" />
+                        <span>Library</span>
+                      </button>
 
-                  <button
-                    onClick={() => handleMoveToLibrary(book.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition-all shadow glow-primary cursor-pointer"
-                  >
-                    <ShoppingCart className="h-3.5 w-3.5" />
-                    <span>Purchase</span>
-                  </button>
+                      <button
+                        onClick={() => setSelectedOrderBook(book)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition-all shadow glow-primary cursor-pointer"
+                      >
+                        <ShoppingCart className="h-3.5 w-3.5" />
+                        <span>Purchase</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
+
+      {/* Purchase Order Details Modal */}
+      <AnimatePresence>
+        {selectedOrderBook && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md p-6 rounded-3xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl relative overflow-hidden text-left"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setSelectedOrderBook(null);
+                  setOrderDate(new Date().toISOString().split("T")[0]);
+                  setDeliveryDate("");
+                }}
+                className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="space-y-4 mt-2">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5 text-indigo-400" />
+                  <span>Track Purchase Order</span>
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Enter the purchase details for <strong className="text-white">"{selectedOrderBook.title}"</strong>. The book will remain in your wishlist and automatically move to your library once the delivery date is reached.
+                </p>
+
+                <div className="space-y-3.5 pt-2">
+                  <div>
+                    <label className="text-slate-300 text-xs font-semibold block mb-1.5">Date of Order</label>
+                    <div className="relative">
+                      <Calendar className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="date"
+                        required
+                        value={orderDate}
+                        onChange={(e) => setOrderDate(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 text-sm glass-input bg-slate-900 border-white/10"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 text-xs font-semibold block mb-1.5">Estimated Delivery Date</label>
+                    <div className="relative">
+                      <Calendar className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="date"
+                        required
+                        value={deliveryDate}
+                        onChange={(e) => setDeliveryDate(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 text-sm glass-input bg-slate-900 border-white/10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer actions */}
+              <div className="flex gap-3 justify-end border-t border-white/5 pt-4.5 mt-5">
+                <button
+                  onClick={() => {
+                    setSelectedOrderBook(null);
+                    setOrderDate(new Date().toISOString().split("T")[0]);
+                    setDeliveryDate("");
+                  }}
+                  className="px-4 py-2 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!deliveryDate) return;
+                    const cleanNotes = selectedOrderBook.notes ? selectedOrderBook.notes.replace(/\[ORDER_INFO:.*?\]\s*/, "") : "";
+                    const updatedNotes = `[ORDER_INFO:${orderDate}|${deliveryDate}] ${cleanNotes}`;
+                    onUpdateBook(selectedOrderBook.id, { notes: updatedNotes });
+                    setSelectedOrderBook(null);
+                    setOrderDate(new Date().toISOString().split("T")[0]);
+                    setDeliveryDate("");
+                  }}
+                  disabled={!deliveryDate}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold transition-all shadow glow-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Confirm Order
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
