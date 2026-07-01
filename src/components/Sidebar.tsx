@@ -21,6 +21,7 @@ import {
   Flame,
   User,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SidebarProps {
   activeTab: string;
@@ -41,6 +42,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("Reader");
+  const [userDob, setUserDob] = useState<string>("—");
+  const [userEmailAddress, setUserEmailAddress] = useState<string>("");
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [sandbox, setSandbox] = useState(true);
 
   useEffect(() => {
@@ -51,14 +55,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         if (user) {
           const profileName = user.user_metadata?.full_name || user.email || "Reader";
           const profileRole = user.user_metadata?.role || "Cloud Reader";
+          const profileDob = user.user_metadata?.dob || "—";
           setUserEmail(profileName);
           setUserRole(profileRole);
+          setUserDob(profileDob);
+          setUserEmailAddress(user.email || "");
         }
       } else {
         const localName = localStorage.getItem("bookvault_profile_name") || "Sandbox Reader";
         const localRole = localStorage.getItem("bookvault_profile_role") || "Local Reader";
+        const localDob = localStorage.getItem("bookvault_profile_dob") || "—";
         setUserEmail(localName);
         setUserRole(localRole);
+        setUserDob(localDob);
+        setUserEmailAddress("sandbox@local.internal");
       }
     };
     fetchUser();
@@ -119,7 +129,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* User Profile Card */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+          <div 
+            onClick={() => setIsProfileOpen(true)}
+            className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-all duration-200"
+            title="View Profile Details"
+          >
             <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300">
               <User className="h-4 w-4" />
             </div>
@@ -215,6 +229,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden"
         />
       )}
+
+      {/* Profile Details Modal Overlay */}
+      <AnimatePresence>
+        {isProfileOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm p-6 rounded-3xl border border-white/10 glass-panel shadow-2xl space-y-6 relative"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsProfileOpen(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg text-white font-black text-xl">
+                  {userEmail ? userEmail.charAt(0).toUpperCase() : "R"}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-lg text-white leading-tight">{userEmail}</h3>
+                  <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">{userRole}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3.5 border-t border-white/5 pt-4 text-xs">
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-slate-400 font-medium">Email Address</span>
+                  <span className="text-slate-200 font-semibold">{userEmailAddress}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-slate-400 font-medium">Date of Birth</span>
+                  <span className="text-slate-200 font-semibold">{userDob}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-slate-400 font-medium">Account Mode</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                    sandbox ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  }`}>
+                    {sandbox ? "Local Sandbox" : "Cloud Sync"}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsProfileOpen(false)}
+                className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 font-semibold hover:text-white transition-all text-xs cursor-pointer"
+              >
+                Close Profile
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
