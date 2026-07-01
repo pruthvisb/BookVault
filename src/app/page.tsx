@@ -323,7 +323,7 @@ export default function RootPage() {
       />
 
       {/* Main page content container */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl mx-auto w-full space-y-6">
+      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto max-w-7xl mx-auto w-full space-y-6">
         {loadingData ? (
           <div className="h-[60vh] flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">

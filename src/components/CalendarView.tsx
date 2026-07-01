@@ -97,7 +97,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             setSelectedDayLogs(dayLogs);
             setSelectedDateStr(dateStr);
           }}
-          className={`calendar-heatmap-cell p-3 text-center text-xs font-semibold rounded-xl border cursor-pointer select-none relative ${cellColorClass} ${
+          className={`calendar-heatmap-cell p-1.5 sm:p-3 text-center text-xs font-semibold rounded-xl border cursor-pointer select-none relative ${cellColorClass} ${
             isSelected ? "ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-900 border-indigo-400" : ""
           }`}
         >
@@ -173,7 +173,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         {/* Calendar Grid */}
         <div className="space-y-2">
           {/* Weekday titles */}
-          <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
               <div key={day} className="py-1">
                 {day}
@@ -182,7 +182,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
 
           {/* Days Grid cells */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {renderDays()}
           </div>
         </div>

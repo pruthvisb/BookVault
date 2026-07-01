@@ -144,7 +144,8 @@ export const History: React.FC<HistoryProps> = ({
         </div>
       ) : (
         <div className="glass-panel border border-white/5 rounded-3xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="overflow-x-auto hidden sm:block">
             <table className="w-full border-collapse text-left text-sm text-slate-300">
               <thead className="bg-black/40 border-b border-white/5 text-slate-400 uppercase tracking-widest text-[9px] font-bold">
                 <tr>
@@ -190,6 +191,54 @@ export const History: React.FC<HistoryProps> = ({
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Cards Feed View */}
+          <div className="block sm:hidden divide-y divide-white/5 bg-transparent">
+            {filteredLogs.map((log) => {
+              const book = books.find((b) => b.id === log.book_id);
+              const formattedDate = new Date(log.date).toLocaleDateString(undefined, {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              });
+
+              return (
+                <div key={log.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="overflow-hidden">
+                      <h4 className="font-bold text-white text-xs truncate">{book?.title || "Deleted Book"}</h4>
+                      <span className="text-[10px] text-slate-500 block mt-0.5">{formattedDate}</span>
+                    </div>
+                    <button
+                      onClick={() => onDeleteLog(log.id)}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all shrink-0"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-[10px] text-slate-400">
+                    <div>
+                      <span className="block text-[8px] uppercase font-bold text-slate-500">Read</span>
+                      <span className="font-semibold text-indigo-400">{log.pages_read} pages</span>
+                    </div>
+                    <div>
+                      <span className="block text-[8px] uppercase font-bold text-slate-500">Duration</span>
+                      <span className="font-semibold text-white">{log.reading_time ? `${log.reading_time}m` : "—"}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[8px] uppercase font-bold text-slate-500">End Page</span>
+                      <span className="font-semibold text-white">{log.current_page}</span>
+                    </div>
+                  </div>
+                  {log.notes && (
+                    <p className="text-[10px] text-slate-500 italic mt-1 leading-snug">
+                      "{log.notes}"
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
