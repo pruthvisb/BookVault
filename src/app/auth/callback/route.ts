@@ -16,9 +16,14 @@ export async function GET(request: Request) {
     
     if (!error) {
       return NextResponse.redirect(new URL(next, request.url));
+    } else {
+      console.error("Auth callback code exchange error:", error);
+      return NextResponse.redirect(
+        new URL(`/?error=auth-callback-failed&details=${encodeURIComponent(error.message)}`, request.url)
+      );
     }
   }
 
-  // Return the user to home with an error parameter if exchange fails
-  return NextResponse.redirect(new URL("/?error=auth-callback-failed", request.url));
+  // Return the user to home with a generic error if no code is present
+  return NextResponse.redirect(new URL("/?error=auth-callback-missing", request.url));
 }
