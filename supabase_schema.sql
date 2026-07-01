@@ -103,7 +103,7 @@ create policy "Users can delete their own reading goals" on public.reading_goals
 
 
 -- Indexes for optimization
-create index if null not exists books_user_id_idx on public.books(user_id);
-create index if null not exists reading_logs_user_id_idx on public.reading_logs(user_id);
-create index if null not exists reading_logs_book_id_idx on public.reading_logs(book_id);
-create index if null not exists reading_goals_user_id_idx on public.reading_goals(user_id);
+create index if not exists books_user_id_idx on public.books(user_id);
+create index if not exists reading_logs_user_id_idx on public.reading_logs(user_id);
+create index if not exists reading_logs_book_id_idx on public.reading_logs(book_id);
+create index if not exists reading_goals_user_id_idx on public.reading_goals(user_id);
