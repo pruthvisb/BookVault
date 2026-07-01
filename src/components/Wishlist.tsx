@@ -6,7 +6,7 @@ import {
   Heart,
   Search,
   Trash2,
-  DollarSign,
+  IndianRupee,
   ArrowUpRight,
   ShoppingCart,
   BookmarkPlus,
@@ -108,10 +108,10 @@ export const Wishlist: React.FC<WishlistProps> = ({
           <div className="p-4 rounded-2xl glass-card border border-white/5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-slate-400 block">Estimated Cost</span>
-              <span className="text-2xl font-extrabold text-white mt-1 block">${totalCost.toFixed(2)}</span>
+              <span className="text-2xl font-extrabold text-white mt-1 block">₹{totalCost.toFixed(2)}</span>
             </div>
             <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
-              <DollarSign className="h-5 w-5" />
+              <IndianRupee className="h-5 w-5" />
             </div>
           </div>
 
@@ -188,7 +188,7 @@ export const Wishlist: React.FC<WishlistProps> = ({
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <span className="text-slate-400">Target Price</span>
                   <span className="text-white flex items-center">
-                    {book.price ? `$${book.price.toFixed(2)}` : "Not Specified"}
+                    {book.price ? `₹${book.price.toFixed(2)}` : "Not Specified"}
                   </span>
                 </div>
 

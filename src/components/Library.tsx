@@ -290,7 +290,7 @@ export const Library: React.FC<LibraryProps> = ({
                       {book.price !== undefined && book.price !== null && (
                         <div>
                           <span>Price: </span>
-                          <span className="text-slate-200 font-semibold">${Number(book.price).toFixed(2)}</span>
+                          <span className="text-slate-200 font-semibold">₹{Number(book.price).toFixed(2)}</span>
                         </div>
                       )}
                       {book.source === "Online" && book.purchase_link && (
