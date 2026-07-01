@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeContext";
 import { NotificationProvider } from "@/components/Notifications";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -47,6 +49,7 @@ export default function RootLayout({
         <ThemeProvider>
           <NotificationProvider>
             {children}
+            <Analytics />
           </NotificationProvider>
         </ThemeProvider>
       </body>
