@@ -12,8 +12,10 @@ import {
   Trash2,
   Edit,
   SlidersHorizontal,
-  Bookmark,
   ChevronDown,
+  X,
+  BookmarkCheck,
+  Bookmark,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -38,6 +40,7 @@ export const Library: React.FC<LibraryProps> = ({
   const [ratingFilter, setRatingFilter] = useState<number | "All">("All");
   const [sortBy, setSortBy] = useState<"title" | "progress" | "recent">("recent");
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
   // Filter and Sort logic
   const filteredBooks = libraryBooks
@@ -243,10 +246,14 @@ export const Library: React.FC<LibraryProps> = ({
                         {getStatusIcon(book.status)}
                         <span>{book.status}</span>
                       </div>
-                      <h3 className="font-extrabold text-white text-base leading-snug truncate pr-6" title={book.title}>
+                      <h3 
+                        onClick={() => setSelectedBook(book)}
+                        className="font-extrabold text-white text-base leading-snug truncate pr-6 cursor-pointer hover:text-indigo-400 transition-colors" 
+                        title="Click to view details"
+                      >
                         {book.title}
                       </h3>
-                      <p className="text-slate-400 text-xs truncate leading-none">{book.author}</p>
+                      <p className="text-slate-400 text-xs truncate leading-none">By {book.author}</p>
                     </div>
 
                     {book.genre && (
@@ -369,6 +376,172 @@ export const Library: React.FC<LibraryProps> = ({
           })}
         </div>
       )}
+      {/* Book Details Modal */}
+      <AnimatePresence>
+        {selectedBook && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-2xl p-6 md:p-8 rounded-3xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl relative overflow-hidden text-left"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedBook(null)}
+                className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex flex-col md:flex-row gap-6 items-start mt-4">
+                {/* Left: Book Cover preview */}
+                <div className="w-full md:w-44 shrink-0 space-y-4">
+                  <div
+                    style={{
+                      background: selectedBook.cover_url?.startsWith("linear-gradient") ? selectedBook.cover_url : "none",
+                      backgroundColor: selectedBook.cover_url?.startsWith("linear-gradient") ? "transparent" : "#1e293b",
+                    }}
+                    className="w-full h-60 rounded-2xl overflow-hidden shadow-lg flex items-center justify-center border border-white/10 relative"
+                  >
+                    {selectedBook.cover_url && !selectedBook.cover_url.startsWith("linear-gradient") && (
+                      <img src={selectedBook.cover_url} alt={selectedBook.title} className="w-full h-full object-cover" />
+                    )}
+                    {(!selectedBook.cover_url) && <BookOpen className="h-10 w-10 text-slate-500" />}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-white/5 bg-slate-900/50 text-xs font-semibold uppercase tracking-wider ${getStatusBadgeClass(selectedBook.status)}`}>
+                      {getStatusIcon(selectedBook.status)}
+                      <span className="ml-1">{selectedBook.status}</span>
+                    </div>
+
+                    {selectedBook.genre && (
+                      <div className="text-center py-2 px-3 rounded-xl border border-indigo-500/10 bg-indigo-500/5 text-indigo-300 text-xs font-bold uppercase tracking-wider">
+                        {selectedBook.genre}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Full Metadata Details */}
+                <div className="flex-1 space-y-5 w-full">
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-extrabold text-white leading-snug">{selectedBook.title}</h2>
+                    <p className="text-slate-400 text-sm font-medium">By {selectedBook.author}</p>
+                  </div>
+
+                  {/* Progress info */}
+                  <div className="space-y-2 border-t border-white/5 pt-4">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <span className="text-slate-400">Reading Progress</span>
+                      <span className="text-white font-mono">
+                        {selectedBook.current_page} / {selectedBook.total_pages} pages ({Math.round((selectedBook.current_page / selectedBook.total_pages) * 100)}%)
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-slate-800 border border-white/5 overflow-hidden">
+                      <div
+                        style={{ width: `${Math.round((selectedBook.current_page / selectedBook.total_pages) * 100)}%` }}
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Details Grid Table */}
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3.5 text-xs border-t border-white/5 pt-4">
+                    {selectedBook.publisher && (
+                      <div>
+                        <span className="text-slate-500 block">Publisher</span>
+                        <span className="text-slate-200 font-semibold">{selectedBook.publisher}</span>
+                      </div>
+                    )}
+                    {selectedBook.isbn && (
+                      <div>
+                        <span className="text-slate-500 block">ISBN</span>
+                        <span className="text-slate-200 font-semibold">{selectedBook.isbn}</span>
+                      </div>
+                    )}
+                    {selectedBook.purchase_date && (
+                      <div>
+                        <span className="text-slate-500 block">Purchase Date</span>
+                        <span className="text-slate-200 font-semibold">{selectedBook.purchase_date}</span>
+                      </div>
+                    )}
+                    {selectedBook.price !== undefined && selectedBook.price !== null && (
+                      <div>
+                        <span className="text-slate-500 block">Price Paid</span>
+                        <span className="text-slate-200 font-semibold">₹{Number(selectedBook.price).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {selectedBook.date_started && (
+                      <div>
+                        <span className="text-slate-500 block">Date Started</span>
+                        <span className="text-slate-200 font-semibold">{selectedBook.date_started}</span>
+                      </div>
+                    )}
+                    {selectedBook.date_finished && (
+                      <div>
+                        <span className="text-slate-500 block">Date Finished</span>
+                        <span className="text-slate-200 font-semibold">{selectedBook.date_finished}</span>
+                      </div>
+                    )}
+                    {selectedBook.source && (
+                      <div>
+                        <span className="text-slate-500 block">Source</span>
+                        <span className="text-slate-200 font-semibold">{selectedBook.source}</span>
+                      </div>
+                    )}
+                    {selectedBook.purchase_link && (
+                      <div className="col-span-2">
+                        <span className="text-slate-500 block">Store Link</span>
+                        <a
+                          href={selectedBook.purchase_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-400 hover:text-indigo-300 font-semibold underline truncate block max-w-md mt-0.5"
+                        >
+                          {selectedBook.purchase_link}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedBook.notes && (
+                    <div className="border-t border-white/5 pt-4 space-y-1">
+                      <span className="text-xs text-slate-500 block">Notes & Review</span>
+                      <p className="text-slate-300 text-xs leading-relaxed italic bg-black/20 p-3 border border-white/5 rounded-xl">
+                        "{selectedBook.notes}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Footer Actions (Edit option at last!) */}
+              <div className="flex gap-3 justify-end border-t border-white/5 pt-5 mt-6">
+                <button
+                  onClick={() => setSelectedBook(null)}
+                  className="px-4.5 py-2 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const bookToEdit = selectedBook;
+                    setSelectedBook(null); // Close details modal
+                    onOpenEditBook(bookToEdit); // Open edit modal
+                  }}
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold transition-all shadow glow-primary cursor-pointer"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Book Details</span>
+                </button>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
