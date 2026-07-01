@@ -80,6 +80,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onAuthSuccess }) => {
 
         if (data.user && data.session === null) {
           setInfoMsg("Verification link sent! Check your email to confirm registration.");
+          setIsSignUp(false); // Switch to Sign In view
         } else {
           localStorage.setItem("bookvault_session_active", "true");
           setSandboxMode(false);

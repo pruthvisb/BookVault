@@ -43,6 +43,17 @@ export default function RootPage() {
   const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
 
+  // Redirect to auth callback if code is present in URL query params (e.g. from email verification link)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      if (code) {
+        window.location.href = `/auth/callback?code=${code}`;
+      }
+    }
+  }, []);
+
   // Auth State Listener
   useEffect(() => {
     const checkUser = async () => {
