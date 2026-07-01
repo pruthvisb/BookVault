@@ -4,7 +4,9 @@
 
 <div align="center">
 
-# 📖 BookVault
+<img src="public/logo.png" alt="BookVault Logo" width="120" />
+
+# BookVault
 ### *Your Intelligent Digital Library & Reading Sanctuary*
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
@@ -67,15 +69,15 @@ Equipped with a **Dual-State Database Layer**, BookVault works completely offlin
 
 ---
 
-## 📸 Screenshots Section
+## 📸 Screenshots & Layout Preview
 
-| Dashboard View (Dark Mode) | Library Catalog View |
+| Dashboard View (Dark Mode) | Feature Illustration |
 |:---:|:---:|
-| ![Dashboard Placeholder](https://via.placeholder.com/600x350/0b0d12/slate?text=BookVault+Dashboard+View) | ![Library Placeholder](https://via.placeholder.com/600x350/0b0d12/slate?text=BookVault+Library+Catalog) |
+| ![Dashboard Mockup](public/dashboard_mockup.png) | ![Features Illustration](public/features_illustration.png) |
 
-| Contribution Heatmap | Account Profile Overlay |
+| System Architecture Diagram | Open Graph Preview |
 |:---:|:---:|
-| ![Calendar Heatmap Placeholder](https://via.placeholder.com/600x350/0b0d12/slate?text=Contribution+Heatmap+Calendar) | ![Profile Placeholder](https://via.placeholder.com/600x350/0b0d12/slate?text=Account+Profile+Details+Modal) |
+| ![System Architecture Diagram](public/architecture_diagram.png) | ![Open Graph Preview](public/open_graph.png) |
 
 ---
 
