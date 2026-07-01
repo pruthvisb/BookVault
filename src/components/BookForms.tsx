@@ -206,9 +206,8 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                           if (type === "preset") setCoverUrl(PRESET_COVERS[0]);
                           else setCoverUrl("");
                         }}
-                        className={`flex-1 py-1.5 rounded-lg capitalize font-medium transition-all ${
-                          coverType === type ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
-                        }`}
+                        className={`flex-1 py-1.5 rounded-lg capitalize font-medium transition-all ${coverType === type ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+                          }`}
                       >
                         {type}
                       </button>
@@ -223,9 +222,8 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                           type="button"
                           onClick={() => setCoverUrl(gradient)}
                           style={{ background: gradient }}
-                          className={`h-8 rounded-lg border-2 ${
-                            coverUrl === gradient ? "border-indigo-500 scale-105" : "border-transparent"
-                          } transition-all`}
+                          className={`h-8 rounded-lg border-2 ${coverUrl === gradient ? "border-indigo-500 scale-105" : "border-transparent"
+                            } transition-all`}
                         />
                       ))}
                     </div>
@@ -352,7 +350,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-slate-300 text-xs font-semibold block mb-1.5">Price Paid ($)</label>
+                    <label className="text-slate-300 text-xs font-semibold block mb-1.5">Price Paid (₹)</label>
                     <div className="relative">
                       <DollarSign className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
