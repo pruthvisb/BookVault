@@ -12,10 +12,10 @@ import {
   Trash2,
   Edit,
   SlidersHorizontal,
-  ChevronDown,
   X,
   BookmarkCheck,
   Bookmark,
+  Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,6 +25,7 @@ interface LibraryProps {
   onDeleteBook: (id: string) => void;
   onOpenEditBook: (book: Book) => void;
   onOpenDailyLog: () => void;
+  onOpenAddBook: () => void;
 }
 
 export const Library: React.FC<LibraryProps> = ({
@@ -33,6 +34,7 @@ export const Library: React.FC<LibraryProps> = ({
   onDeleteBook,
   onOpenEditBook,
   onOpenDailyLog,
+  onOpenAddBook,
 }) => {
   const libraryBooks = books.filter((b) => b.status !== "Wishlist");
   const [search, setSearch] = useState("");
@@ -111,6 +113,14 @@ export const Library: React.FC<LibraryProps> = ({
           </div>
 
           <div className="flex gap-2">
+            <button
+              onClick={onOpenAddBook}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-xs hover:from-indigo-500 hover:to-purple-500 transition-all shadow-md glow-primary cursor-pointer shrink-0"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Book</span>
+            </button>
+
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${

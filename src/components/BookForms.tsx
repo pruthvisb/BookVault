@@ -10,6 +10,7 @@ interface AddBookModalProps {
   onClose: () => void;
   onSubmit: (book: any) => void;
   initialBook?: Book | null;
+  allowedStatuses?: Book["status"][];
 }
 
 interface DailyLogModalProps {
@@ -33,12 +34,16 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
   onClose,
   onSubmit,
   initialBook,
+  allowedStatuses,
 }) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState("");
   const [totalPages, setTotalPages] = useState("");
-  const [status, setStatus] = useState<Book["status"]>("Not Started");
+  const [status, setStatus] = useState<Book["status"]>(
+    initialBook?.status || 
+    (allowedStatuses && allowedStatuses.includes("Reading") ? "Reading" : (allowedStatuses ? allowedStatuses[0] : "Not Started"))
+  );
   const [isbn, setIsbn] = useState("");
   const [publisher, setPublisher] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
@@ -86,7 +91,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       setAuthor("");
       setGenre("");
       setTotalPages("");
-      setStatus("Not Started");
+      setStatus(allowedStatuses && allowedStatuses.includes("Reading") ? "Reading" : (allowedStatuses ? allowedStatuses[0] : "Not Started"));
       setIsbn("");
       setPublisher("");
       setPurchaseDate("");
@@ -309,10 +314,18 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                     onChange={(e) => setStatus(e.target.value as Book["status"])}
                     className="w-full px-4 py-2.5 text-sm glass-input bg-slate-900 border-white/10"
                   >
-                    <option value="Not Started" className="bg-slate-900 text-white">Not Started</option>
-                    <option value="Reading" className="bg-slate-900 text-white">Reading</option>
-                    <option value="Completed" className="bg-slate-900 text-white">Completed</option>
-                    <option value="Wishlist" className="bg-slate-900 text-white">Wishlist</option>
+                    {(!allowedStatuses || allowedStatuses.includes("Not Started") || initialBook) && (
+                      <option value="Not Started" className="bg-slate-900 text-white">Not Started</option>
+                    )}
+                    {(!allowedStatuses || allowedStatuses.includes("Reading") || initialBook) && (
+                      <option value="Reading" className="bg-slate-900 text-white">Reading</option>
+                    )}
+                    {(!allowedStatuses || allowedStatuses.includes("Completed") || initialBook) && (
+                      <option value="Completed" className="bg-slate-900 text-white">Completed</option>
+                    )}
+                    {(!allowedStatuses || allowedStatuses.includes("Wishlist") || initialBook) && (
+                      <option value="Wishlist" className="bg-slate-900 text-white">Wishlist</option>
+                    )}
                   </select>
                 </div>
 

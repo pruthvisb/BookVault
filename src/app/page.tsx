@@ -414,6 +414,10 @@ export default function RootPage() {
                     setIsAddBookOpen(true);
                   }}
                   onOpenDailyLog={() => setIsDailyLogOpen(true)}
+                  onOpenAddBook={() => {
+                    setEditingBook(null);
+                    setIsAddBookOpen(true);
+                  }}
                 />
               )}
 
@@ -473,6 +477,7 @@ export default function RootPage() {
           }
         }}
         initialBook={editingBook}
+        allowedStatuses={activeTab === "wishlist" ? ["Wishlist"] : ["Reading", "Completed", "Not Started"]}
       />
 
       <DailyLogModal
