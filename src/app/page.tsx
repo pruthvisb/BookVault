@@ -58,7 +58,7 @@ export default function RootPage() {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      const explicitSandbox = localStorage.getItem("bookvault_use_local") === "true";
+      const explicitSandbox = sessionStorage.getItem("bookvault_sandbox_active") === "true";
       
       if (session) {
         localStorage.setItem("bookvault_session_active", "true");
@@ -75,7 +75,7 @@ export default function RootPage() {
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      const explicitSandbox = localStorage.getItem("bookvault_use_local") === "true";
+      const explicitSandbox = sessionStorage.getItem("bookvault_sandbox_active") === "true";
       if (session) {
         localStorage.setItem("bookvault_session_active", "true");
         setSandboxMode(false);

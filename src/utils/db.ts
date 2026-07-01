@@ -70,16 +70,18 @@ const setLocalStorage = <T>(key: string, value: T): void => {
 // Check if we should use local sandbox (no auth or explicit offline)
 export const isLocalSandbox = (): boolean => {
   if (typeof window === "undefined") return true;
-  const useLocal = localStorage.getItem("bookvault_use_local") === "true";
+  const useLocal = sessionStorage.getItem("bookvault_sandbox_active") === "true";
   const sessionActive = localStorage.getItem("bookvault_session_active") === "true";
   return useLocal || !sessionActive;
 };
 
 export const setSandboxMode = (active: boolean) => {
   if (typeof window !== "undefined") {
-    localStorage.setItem("bookvault_use_local", active ? "true" : "false");
     if (active) {
+      sessionStorage.setItem("bookvault_sandbox_active", "true");
       localStorage.removeItem("bookvault_session_active");
+    } else {
+      sessionStorage.removeItem("bookvault_sandbox_active");
     }
   }
 };
