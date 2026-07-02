@@ -470,6 +470,10 @@ export default function RootPage() {
                     setEditingBook(null);
                     setIsAddBookOpen(true);
                   }}
+                  onOpenEditBook={(book) => {
+                    setEditingBook(book);
+                    setIsAddBookOpen(true);
+                  }}
                 />
               )}
 
