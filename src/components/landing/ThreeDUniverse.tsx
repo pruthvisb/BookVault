@@ -799,17 +799,17 @@ const CtaSingularitySection: React.FC<{
           <span>Security verified</span>
         </span>
         <h3 className="text-lg font-black text-white uppercase tracking-wider leading-none">
-          Establish Singularity
+          Access Singularity
         </h3>
         <p className="text-slate-400 text-[10px] uppercase leading-relaxed max-w-xs mx-auto">
-          Join the quantum library space today. Connect via Supabase cloud backup or run in sandbox.
+          Sign in to access your private quantum library manifold. Connect via your Supabase credentials or run in local sandbox mode.
         </p>
         <div className="flex gap-3 justify-center pt-2">
           <button 
-            onClick={() => { setIsSignUp(true); setShowAuth(true); }}
+            onClick={() => { setIsSignUp(false); setShowAuth(true); }}
             className="px-4.5 py-2.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-mono text-[9px] rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow-lg"
           >
-            Sign Up
+            Sign In
           </button>
           <button 
             onClick={handleSandboxMode}
@@ -1152,37 +1152,18 @@ export const ThreeDUniverse: React.FC<ThreeDUniverseProps> = ({ onAuthSuccess })
     setErrorMsg(null);
     setInfoMsg(null);
 
-    try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-            data: { full_name: fullName, role: role, dob: dob }
-          },
-        });
-        if (error) throw error;
-        
-        localStorage.setItem("bookvault_profile_name", fullName);
-        localStorage.setItem("bookvault_profile_role", role);
-        localStorage.setItem("bookvault_profile_dob", dob);
+    if (isSignUp) {
+      setErrorMsg("Access Denied: Registration/Sign-ups are disabled for this private library manifold.");
+      setLoading(false);
+      return;
+    }
 
-        if (data.user && data.session === null) {
-          setInfoMsg("Verification link sent! Check your email to confirm registration.");
-          setIsSignUp(false);
-        } else {
-          localStorage.setItem("bookvault_session_active", "true");
-          setSandboxMode(false);
-          onAuthSuccess();
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        localStorage.setItem("bookvault_session_active", "true");
-        setSandboxMode(false);
-        onAuthSuccess();
-      }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      localStorage.setItem("bookvault_session_active", "true");
+      setSandboxMode(false);
+      onAuthSuccess();
     } catch (err: any) {
       console.error("Supabase Auth Error:", err);
       setErrorMsg(err.message || "An authentication error occurred.");
@@ -1396,15 +1377,9 @@ export const ThreeDUniverse: React.FC<ThreeDUniverseProps> = ({ onAuthSuccess })
           <div className="flex items-center gap-4">
             <button 
               onClick={() => { setIsSignUp(false); setShowAuth(true); }}
-              className="text-slate-450 hover:text-white text-xs font-mono tracking-widest uppercase cursor-pointer transition-colors"
-            >
-              Sign In
-            </button>
-            <button 
-              onClick={() => { setIsSignUp(true); setShowAuth(true); }}
               className="glow-button px-4 py-2 bg-white text-black font-mono text-[10px] rounded-xl font-bold uppercase tracking-widest cursor-pointer shadow-lg hover:bg-slate-100"
             >
-              Establish Vault
+              Access Vault
             </button>
           </div>
         </header>
@@ -1439,10 +1414,10 @@ export const ThreeDUniverse: React.FC<ThreeDUniverseProps> = ({ onAuthSuccess })
 
               <div className="flex flex-wrap gap-4 pt-4">
                 <button 
-                  onClick={() => { setIsSignUp(true); setShowAuth(true); }}
+                  onClick={() => { setIsSignUp(false); setShowAuth(true); }}
                   className="glow-button px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-cyan-500 text-white font-mono text-[11px] font-bold rounded-xl uppercase tracking-widest cursor-pointer shadow-[0_0_30px_rgba(99,102,241,0.25)] border-0"
                 >
-                  Launch Vault
+                  Access Vault
                 </button>
                 <button 
                   onClick={handleSandboxMode}
@@ -1803,13 +1778,8 @@ export const ThreeDUniverse: React.FC<ThreeDUniverseProps> = ({ onAuthSuccess })
                 <span>Use Local Sandbox</span>
               </button>
 
-              <div className="text-center mt-5">
-                <button
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-[9px] uppercase tracking-widest text-slate-500 hover:text-white transition-all cursor-pointer"
-                >
-                  {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
-                </button>
+              <div className="text-center mt-5 text-[8px] uppercase tracking-widest text-slate-600">
+                Private Singularity Core // Registration Closed
               </div>
             </motion.div>
           </div>
