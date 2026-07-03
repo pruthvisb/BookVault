@@ -79,6 +79,7 @@ export default function RootPage() {
   // Modals state
   const [isAddBookOpen, setIsAddBookOpen] = useState(false);
   const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
+  const [preselectedBookId, setPreselectedBookId] = useState<string | null>(null);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
 
   // Redirect to auth callback if code is present in URL query params (e.g. from email verification link)
@@ -343,6 +344,11 @@ export default function RootPage() {
     }
   };
 
+  const handleOpenDailyLog = (bookId?: string) => {
+    setPreselectedBookId(bookId || null);
+    setIsDailyLogOpen(true);
+  };
+
   const handleDeleteReadingLog = async (id: string) => {
     const log = readingLogs.find((l) => l.id === id);
     if (!log) return;
@@ -439,7 +445,7 @@ export default function RootPage() {
                     setEditingBook(null);
                     setIsAddBookOpen(true);
                   }}
-                  onOpenDailyLog={() => setIsDailyLogOpen(true)}
+                  onOpenDailyLog={handleOpenDailyLog}
                   onSelectTab={setActiveTab}
                 />
               )}
@@ -447,13 +453,14 @@ export default function RootPage() {
               {activeTab === "library" && (
                 <Library
                   books={books}
+                  readingLogs={readingLogs}
                   onUpdateBook={handleUpdateBook}
                   onDeleteBook={handleDeleteBook}
                   onOpenEditBook={(book) => {
                     setEditingBook(book);
                     setIsAddBookOpen(true);
                   }}
-                  onOpenDailyLog={() => setIsDailyLogOpen(true)}
+                  onOpenDailyLog={handleOpenDailyLog}
                   onOpenAddBook={() => {
                     setEditingBook(null);
                     setIsAddBookOpen(true);
@@ -529,6 +536,7 @@ export default function RootPage() {
         onClose={() => setIsDailyLogOpen(false)}
         onSubmit={handleCreateReadingLog}
         books={books}
+        preselectedBookId={preselectedBookId}
       />
     </div>
   );

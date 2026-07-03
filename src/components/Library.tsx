@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Book } from "@/utils/db";
+import { Book, ReadingLog } from "@/utils/db";
 import {
   Search,
   BookOpen,
@@ -16,20 +16,59 @@ import {
   BookmarkCheck,
   Bookmark,
   Plus,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+const parseBookNotes = (rawNotes: string | undefined) => {
+  if (!rawNotes) return { chapters: [] as { name: string; pages: number }[], chapter: "", status: "", notes: "" };
+  
+  let notes = rawNotes;
+  let chapters: { name: string; pages: number }[] = [];
+  let chapter = "";
+  let status = "";
+
+  const chaptersMatch = notes.match(/^\[CHAPTERS:(.*?)\]\s*([\s\S]*)/);
+  if (chaptersMatch) {
+    const rawChapters = chaptersMatch[1].split("|").filter(Boolean);
+    chapters = rawChapters.map((raw) => {
+      const colonIdx = raw.lastIndexOf(":");
+      if (colonIdx !== -1) {
+        const name = raw.substring(0, colonIdx);
+        const pages = parseInt(raw.substring(colonIdx + 1), 10);
+        if (!isNaN(pages)) {
+          return { name, pages };
+        }
+      }
+      return { name: raw, pages: 0 };
+    });
+    notes = chaptersMatch[2];
+  }
+
+  const chapterMatch = notes.match(/^\[CHAPTER:([^\]|]*?)(?:\|STATUS:([^\]]*?))?\]\s*([\s\S]*)/);
+  if (chapterMatch) {
+    chapter = chapterMatch[1];
+    status = chapterMatch[2] || "In Progress";
+    notes = chapterMatch[3];
+  }
+
+  return { chapters, chapter, status, notes };
+};
+
 interface LibraryProps {
   books: Book[];
+  readingLogs?: ReadingLog[];
   onUpdateBook: (id: string, updates: Partial<Book>) => void;
   onDeleteBook: (id: string) => void;
   onOpenEditBook: (book: Book) => void;
-  onOpenDailyLog: () => void;
+  onOpenDailyLog: (bookId?: string) => void;
   onOpenAddBook: () => void;
 }
 
 export const Library: React.FC<LibraryProps> = ({
   books,
+  readingLogs = [],
   onUpdateBook,
   onDeleteBook,
   onOpenEditBook,
@@ -43,6 +82,7 @@ export const Library: React.FC<LibraryProps> = ({
   const [sortBy, setSortBy] = useState<"title" | "progress" | "recent">("recent");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
 
   // Filter and Sort logic
   const filteredBooks = libraryBooks
@@ -257,7 +297,10 @@ export const Library: React.FC<LibraryProps> = ({
                         <span>{book.status}</span>
                       </div>
                       <h3 
-                        onClick={() => setSelectedBook(book)}
+                        onClick={() => {
+                          setSelectedBook(book);
+                          setExpandedChapter(null);
+                        }}
                         className="font-extrabold text-white text-base leading-snug truncate pr-6 cursor-pointer hover:text-indigo-400 transition-colors" 
                         title="Click to view details"
                       >
@@ -344,11 +387,15 @@ export const Library: React.FC<LibraryProps> = ({
                   </div>
 
                   {/* Notes summary */}
-                  {book.notes && (
-                    <p className="text-xs text-slate-500 italic line-clamp-2 border-t border-white/5 pt-3">
-                      "{book.notes}"
-                    </p>
-                  )}
+                  {book.notes && (() => {
+                    const { notes } = parseBookNotes(book.notes);
+                    if (!notes) return null;
+                    return (
+                      <p className="text-xs text-slate-500 italic line-clamp-2 border-t border-white/5 pt-3">
+                        "{notes}"
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 {/* Card Action Footers */}
@@ -372,7 +419,7 @@ export const Library: React.FC<LibraryProps> = ({
 
                     {(book.status === "Reading" || book.status === "Not Started") && (
                       <button
-                        onClick={onOpenDailyLog}
+                        onClick={() => onOpenDailyLog(book.id)}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition-all shadow glow-primary cursor-pointer"
                       >
                         <Bookmark className="h-3 w-3" />
@@ -398,7 +445,10 @@ export const Library: React.FC<LibraryProps> = ({
             >
               {/* Close Button */}
               <button
-                onClick={() => setSelectedBook(null)}
+                onClick={() => {
+                  setSelectedBook(null);
+                  setExpandedChapter(null);
+                }}
                 className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
               >
                 <X className="h-5 w-5" />
@@ -516,21 +566,208 @@ export const Library: React.FC<LibraryProps> = ({
                     )}
                   </div>
 
-                  {selectedBook.notes && (
-                    <div className="border-t border-white/5 pt-4 space-y-1">
-                      <span className="text-xs text-slate-500 block">Notes & Review</span>
-                      <p className="text-slate-300 text-xs leading-relaxed italic bg-black/20 p-3 border border-white/5 rounded-xl">
-                        "{selectedBook.notes}"
-                      </p>
-                    </div>
-                  )}
+                  {selectedBook.notes && (() => {
+                    const { chapters, notes } = parseBookNotes(selectedBook.notes);
+                    
+                    // Calculate status and pages read for each chapter dynamically from reading logs
+                    const bookLogs = readingLogs.filter((log) => log.book_id === selectedBook.id);
+                    const chapterPagesRead: Record<string, number> = {};
+                    const chapterLoggedStatus: Record<string, "Completed" | "In Progress" | "Not Started"> = {};
+                    
+                    chapters.forEach((ch) => {
+                      chapterPagesRead[ch.name] = 0;
+                      chapterLoggedStatus[ch.name] = "Not Started";
+                    });
+
+                    const cleanName = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
+
+                    bookLogs.forEach((log) => {
+                      if (log.notes) {
+                        const logMatch = log.notes.match(/^\[CHAPTER:([^\]|]*?)(?:\|STATUS:([^\]]*?))?\]/);
+                        if (logMatch) {
+                          const chName = logMatch[1].trim();
+                          const status = (logMatch[2] || "In Progress").trim() as "Completed" | "In Progress";
+                          
+                          // Find matching chapter case-insensitively and whitespace-insensitively
+                          const targetChapter = chapters.find((c) => cleanName(c.name) === cleanName(chName));
+                          if (targetChapter) {
+                            const chKey = targetChapter.name;
+                            chapterPagesRead[chKey] = (chapterPagesRead[chKey] || 0) + Number(log.pages_read || 0);
+                            
+                            if (status === "Completed") {
+                              chapterLoggedStatus[chKey] = "Completed";
+                            } else if (chapterLoggedStatus[chKey] !== "Completed") {
+                              chapterLoggedStatus[chKey] = "In Progress";
+                            }
+                          }
+                        }
+                      }
+                    });
+
+                    return (
+                      <div className="border-t border-white/5 pt-4 space-y-4">
+                        {chapters.length > 0 && (
+                          <div>
+                            <span className="text-xs text-slate-500 block mb-2">Book Chapters ({chapters.length})</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-1">
+                              {chapters.map((ch, idx) => {
+                                const totalPages = ch.pages;
+                                const readPages = chapterPagesRead[ch.name] || 0;
+                                const loggedStatus = chapterLoggedStatus[ch.name] || "Not Started";
+                                
+                                let percent = 0;
+                                let status: "Completed" | "In Progress" | "Not Started" = "Not Started";
+                                
+                                if (totalPages > 0) {
+                                  percent = Math.min(Math.round((readPages / totalPages) * 100), 100);
+                                  if (percent === 100 || loggedStatus === "Completed") {
+                                    status = "Completed";
+                                    percent = 100;
+                                  } else if (percent > 0 || loggedStatus === "In Progress") {
+                                    status = "In Progress";
+                                  }
+                                } else {
+                                  status = loggedStatus;
+                                  if (status === "Completed") percent = 100;
+                                  else if (status === "In Progress") percent = 50;
+                                }
+
+                                const isExpanded = expandedChapter === ch.name;
+                                
+                                // Filter logs for this specific chapter
+                                const chapterLogs = bookLogs.filter((log) => {
+                                  if (log.notes) {
+                                    const logMatch = log.notes.match(/\[CHAPTER:([^\]|]*?)(?:\|STATUS:([^\]]*?))?\]/);
+                                    if (logMatch) {
+                                      return cleanName(logMatch[1]) === cleanName(ch.name);
+                                    }
+                                  }
+                                  return false;
+                                });
+
+                                let badgeStyle = "bg-slate-800/40 text-slate-400 border-white/5 hover:bg-slate-800/60";
+                                let progressStyle = "bg-slate-700";
+                                if (status === "Completed") {
+                                  badgeStyle = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/[0.12]";
+                                  progressStyle = "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_0_8px_rgba(52,211,153,0.3)]";
+                                } else if (status === "In Progress") {
+                                  badgeStyle = "bg-sky-500/10 text-sky-300 border-sky-500/20 hover:bg-sky-500/[0.12]";
+                                  progressStyle = "bg-gradient-to-r from-sky-500 to-indigo-500 shadow-[0_0_8px_rgba(56,189,248,0.3)]";
+                                }
+
+                                return (
+                                  <div
+                                    key={idx}
+                                    onClick={() => setExpandedChapter(isExpanded ? null : ch.name)}
+                                    className={`p-3.5 rounded-2xl border text-[11px] font-semibold transition-all space-y-2 cursor-pointer active:scale-[0.99] select-none ${badgeStyle} ${
+                                      isExpanded ? "col-span-1 sm:col-span-2 ring-1 ring-indigo-500/30" : "col-span-1"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 truncate mr-2">
+                                        {isExpanded ? (
+                                          <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                        ) : (
+                                          <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                        )}
+                                        <span className="truncate font-bold text-white text-xs">{ch.name}</span>
+                                      </div>
+                                      <span className="text-[9px] uppercase tracking-wider shrink-0 bg-black/25 px-2 py-0.5 rounded-lg">
+                                        {status}
+                                      </span>
+                                    </div>
+                                    
+                                    {totalPages > 0 ? (
+                                      <div className="space-y-1">
+                                        <div className="flex items-center justify-between text-[9px] text-slate-400">
+                                          <span>{readPages} / {totalPages} pages</span>
+                                          <span>{percent}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 rounded-full bg-black/40 overflow-hidden border border-white/5">
+                                          <div
+                                            style={{ width: `${percent}%` }}
+                                            className={`h-full rounded-full transition-all duration-500 ${progressStyle}`}
+                                          />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-[9px] text-slate-500 italic">No page budget set</div>
+                                    )}
+
+                                    {/* Expanded History Details Timeline */}
+                                    {isExpanded && (
+                                      <div className="mt-3 pt-3 border-t border-white/5 space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                                        <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
+                                          Reading Logs History ({chapterLogs.length})
+                                        </span>
+                                        {chapterLogs.length === 0 ? (
+                                          <span className="text-[10px] text-slate-500 italic block py-1.5">
+                                            No sessions logged for this chapter yet.
+                                          </span>
+                                        ) : (
+                                          <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                                            {chapterLogs.map((log, lIdx) => {
+                                              const logDate = new Date(log.date).toLocaleDateString(undefined, {
+                                                month: "short",
+                                                day: "numeric",
+                                                year: "numeric",
+                                              });
+                                              const cleanNotes = log.notes ? log.notes.replace(/\[CHAPTER:.*?\]\s*/g, "").trim() : "";
+                                              
+                                              return (
+                                                <div key={log.id || lIdx} className="bg-black/30 border border-white/5 rounded-xl p-2.5 space-y-1.5 transition-all hover:bg-black/40">
+                                                  <div className="flex flex-wrap items-center justify-between gap-2 text-[10px]">
+                                                    <span className="text-slate-400 font-semibold">{logDate}</span>
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider text-[8px]">
+                                                        +{log.pages_read} pages
+                                                      </span>
+                                                      {log.reading_time ? (
+                                                        <span className="bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded text-[8px]">
+                                                          {log.reading_time} mins
+                                                        </span>
+                                                      ) : null}
+                                                    </div>
+                                                  </div>
+                                                  {cleanNotes && (
+                                                    <p className="text-[10px] text-slate-300 italic bg-white/5 p-2 rounded-lg leading-relaxed">
+                                                      "{cleanNotes}"
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {notes && (
+                          <div className="space-y-1">
+                            <span className="text-xs text-slate-500 block">Notes & Review</span>
+                            <p className="text-slate-300 text-xs leading-relaxed italic bg-black/20 p-3 border border-white/5 rounded-xl">
+                              "{notes}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
               {/* Bottom Footer Actions (Edit option at last!) */}
               <div className="flex gap-3 justify-end border-t border-white/5 pt-5 mt-6">
                 <button
-                  onClick={() => setSelectedBook(null)}
+                  onClick={() => {
+                    setSelectedBook(null);
+                    setExpandedChapter(null);
+                  }}
                   className="px-4.5 py-2 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold cursor-pointer"
                 >
                   Cancel
@@ -539,6 +776,7 @@ export const Library: React.FC<LibraryProps> = ({
                   onClick={() => {
                     const bookToEdit = selectedBook;
                     setSelectedBook(null); // Close details modal
+                    setExpandedChapter(null);
                     onOpenEditBook(bookToEdit); // Open edit modal
                   }}
                   className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold transition-all shadow glow-primary cursor-pointer"

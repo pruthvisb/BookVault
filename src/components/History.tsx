@@ -5,6 +5,15 @@ import { ReadingLog, Book } from "@/utils/db";
 import { History as HistoryIcon, Search, Trash2, Calendar, BookOpen, Clock, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
+const parseLogNotes = (rawNotes: string | undefined) => {
+  if (!rawNotes) return { chapter: "", status: "", notes: "" };
+  const match = rawNotes.match(/^\[CHAPTER:([^\]|]*?)(?:\|STATUS:([^\]]*?))?\]\s*([\s\S]*)/);
+  if (match) {
+    return { chapter: match[1], status: match[2] || "In Progress", notes: match[3] };
+  }
+  return { chapter: "", status: "", notes: rawNotes };
+};
+
 interface HistoryProps {
   readingLogs: ReadingLog[];
   books: Book[];
@@ -174,8 +183,25 @@ export const History: React.FC<HistoryProps> = ({
                       <td className="p-4 text-xs font-semibold text-indigo-400">{log.pages_read} pages</td>
                       <td className="p-4 text-xs text-slate-400">{log.reading_time ? `${log.reading_time} mins` : "—"}</td>
                       <td className="p-4 text-xs font-semibold text-slate-300">{log.current_page}</td>
-                      <td className="p-4 text-xs text-slate-500 max-w-xs truncate" title={log.notes || undefined}>
-                        {log.notes || "—"}
+                      <td className="p-4 text-xs max-w-xs" title={log.notes || undefined}>
+                        {(() => {
+                          const { chapter, status, notes } = parseLogNotes(log.notes);
+                          const isCompleted = status === "Completed";
+                          return (
+                            <div className="flex flex-wrap items-center gap-1.5 truncate">
+                              {chapter && (
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 uppercase tracking-wider ${
+                                  isCompleted
+                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15"
+                                    : "bg-purple-500/10 text-purple-400 border-purple-500/15"
+                                }`}>
+                                  {chapter} {isCompleted ? "✓ Done" : ""}
+                                </span>
+                              )}
+                              <span className="text-slate-400 truncate">{notes || "—"}</span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="p-4 text-center">
                         <button
@@ -231,11 +257,28 @@ export const History: React.FC<HistoryProps> = ({
                       <span className="font-semibold text-white">{log.current_page}</span>
                     </div>
                   </div>
-                  {log.notes && (
-                    <p className="text-[10px] text-slate-500 italic mt-1 leading-snug">
-                      "{log.notes}"
-                    </p>
-                  )}
+                  {log.notes && (() => {
+                    const { chapter, status, notes } = parseLogNotes(log.notes);
+                    const isCompleted = status === "Completed";
+                    return (
+                      <div className="space-y-1 mt-1">
+                        {chapter && (
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border inline-block uppercase tracking-wider ${
+                            isCompleted
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15"
+                              : "bg-purple-500/10 text-purple-400 border-purple-500/15"
+                          }`}>
+                            {chapter} {isCompleted ? "✓ Done" : ""}
+                          </span>
+                        )}
+                        {notes && (
+                          <p className="text-[10px] text-slate-500 italic leading-snug">
+                            "{notes}"
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

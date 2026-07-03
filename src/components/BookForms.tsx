@@ -2,8 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import { Book, ReadingLog } from "@/utils/db";
-import { X, Upload, BookOpen, Clock, Tag, Link2, IndianRupee } from "lucide-react";
+import { X, Upload, BookOpen, Clock, Tag, Link2, IndianRupee, Trash2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const parseChapterString = (str: string) => {
+  const types = ["Chapter", "Section", "Part", "Act", "Prologue", "Epilogue", "Appendix"];
+  for (const t of types) {
+    if (str.startsWith(t + " ")) {
+      return { type: t, val: str.substring(t.length + 1) };
+    }
+    if (str === t) {
+      return { type: t, val: "" };
+    }
+  }
+  return { type: "Other", val: str };
+};
 
 interface AddBookModalProps {
   isOpen: boolean;
@@ -18,6 +31,7 @@ interface DailyLogModalProps {
   onClose: () => void;
   onSubmit: (log: { bookId: string; pagesRead: number; readingTime: number; notes: string }) => void;
   books: Book[];
+  preselectedBookId?: string | null;
 }
 
 const PRESET_COVERS = [
@@ -48,6 +62,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
   const [publisher, setPublisher] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [chaptersList, setChaptersList] = useState<{ name: string; pages: number }[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [coverType, setCoverType] = useState<"preset" | "url" | "file">("preset");
   const [coverUrl, setCoverUrl] = useState(PRESET_COVERS[0]);
@@ -66,7 +81,32 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       setIsbn(initialBook.isbn || "");
       setPublisher(initialBook.publisher || "");
       setPurchaseDate(initialBook.purchase_date || "");
-      setNotes(initialBook.notes || "");
+      
+      // Extract chapters metadata if present
+      if (initialBook.notes) {
+        const chaptersMatch = initialBook.notes.match(/\[CHAPTERS:(.*?)\]\s*([\s\S]*)/);
+        if (chaptersMatch) {
+          const rawChapters = chaptersMatch[1].split("|").filter(Boolean);
+          const parsed = rawChapters.map((raw) => {
+            const colonIdx = raw.lastIndexOf(":");
+            if (colonIdx !== -1) {
+              const name = raw.substring(0, colonIdx);
+              const pages = parseInt(raw.substring(colonIdx + 1), 10);
+              return { name, pages: isNaN(pages) ? 0 : pages };
+            }
+            return { name: raw, pages: 0 };
+          });
+          setChaptersList(parsed);
+          setNotes(chaptersMatch[2]);
+        } else {
+          setChaptersList([]);
+          setNotes(initialBook.notes);
+        }
+      } else {
+        setChaptersList([]);
+        setNotes("");
+      }
+      
       setIsFavorite(initialBook.is_favorite || false);
       setPrice(initialBook.price ? initialBook.price.toString() : "");
       setPriority(initialBook.priority || "Medium");
@@ -96,6 +136,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       setPublisher("");
       setPurchaseDate("");
       setNotes("");
+      setChaptersList([]);
       setIsFavorite(false);
       setCoverType("preset");
       setCoverUrl(PRESET_COVERS[0]);
@@ -121,6 +162,11 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
     e.preventDefault();
     if (!title || !author || !totalPages) return;
 
+    const validChapters = chaptersList.filter((c) => c.name.trim() !== "");
+    const chaptersTag = validChapters.length > 0
+      ? `[CHAPTERS:${validChapters.map((c) => `${c.name.trim()}:${c.pages}`).join("|")}] `
+      : "";
+
     const bookData: any = {
       title,
       author,
@@ -130,7 +176,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       isbn,
       publisher,
       purchase_date: purchaseDate || null,
-      notes,
+      notes: `${chaptersTag}${notes}`,
       is_favorite: isFavorite,
       cover_url: coverUrl,
     };
@@ -488,6 +534,61 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                 </div>
 
                 <div>
+                  <label className="text-slate-300 text-xs font-semibold block mb-1.5">Book Chapters (Optional)</label>
+                  <div className="space-y-2 mb-3 max-h-56 overflow-y-auto pr-1">
+                    {chaptersList.map((ch, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={ch.name}
+                          onChange={(e) => {
+                            const updated = chaptersList.map((c, i) => i === idx ? { ...c, name: e.target.value } : c);
+                            setChaptersList(updated);
+                          }}
+                          placeholder="e.g. Chapter 1: The Sparks"
+                          className="flex-1 px-4 py-2.5 text-xs glass-input"
+                        />
+                        <input
+                          type="number"
+                          value={ch.pages || ""}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            const updated = chaptersList.map((c, i) => i === idx ? { ...c, pages: isNaN(val) ? 0 : val } : c);
+                            setChaptersList(updated);
+                          }}
+                          placeholder="Pages"
+                          min="1"
+                          className="w-20 px-3 py-2.5 text-xs glass-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setChaptersList(chaptersList.filter((_, i) => i !== idx));
+                          }}
+                          className="p-3 bg-black/40 text-slate-400 hover:text-rose-400 border border-white/5 hover:border-rose-500/20 rounded-xl transition-all cursor-pointer shrink-0"
+                          title="Remove Chapter"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setChaptersList([...chaptersList, { name: "", pages: 0 }]);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold transition-all cursor-pointer w-fit"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add Chapter</span>
+                  </button>
+                </div>
+
+                <div>
                   <label className="text-slate-300 text-xs font-semibold block mb-1.5">Personal Notes & Reviews</label>
                   <textarea
                     rows={3}
@@ -528,25 +629,59 @@ export const DailyLogModal: React.FC<DailyLogModalProps> = ({
   onClose,
   onSubmit,
   books,
+  preselectedBookId = null,
 }) => {
   const activeBooks = books.filter((b) => b.status === "Reading" || b.status === "Not Started");
   const [selectedBookId, setSelectedBookId] = useState("");
   const [pagesRead, setPagesRead] = useState("");
   const [readingTime, setReadingTime] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedChapter, setSelectedChapter] = useState("");
+  const [chapters, setChapters] = useState<{ name: string; pages: number }[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const getBookChapters = (bookId: string) => {
+    const book = books.find((b) => b.id === bookId);
+    if (!book || !book.notes) return [];
+    const match = book.notes.match(/\[CHAPTERS:(.*?)\]/);
+    if (match) {
+      return match[1].split("|").filter(Boolean).map((raw) => {
+        const colonIdx = raw.lastIndexOf(":");
+        if (colonIdx !== -1) {
+          const name = raw.substring(0, colonIdx);
+          const pages = parseInt(raw.substring(colonIdx + 1), 10);
+          return { name, pages: isNaN(pages) ? 0 : pages };
+        }
+        return { name: raw, pages: 0 };
+      });
+    }
+    return [];
+  };
+
+  const handleBookChange = (bookId: string) => {
+    setSelectedBookId(bookId);
+    const bookChapters = getBookChapters(bookId);
+    setChapters(bookChapters);
+    setSelectedChapter(bookChapters[0]?.name || "");
+  };
+
   useEffect(() => {
-    if (activeBooks.length > 0) {
-      setSelectedBookId(activeBooks[0].id);
+    if (isOpen) {
+      const initialBookId = preselectedBookId || (activeBooks.length > 0 ? activeBooks[0].id : "");
+      setSelectedBookId(initialBookId);
+      const bookChapters = getBookChapters(initialBookId);
+      setChapters(bookChapters);
+      setSelectedChapter(bookChapters[0]?.name || "");
     } else {
       setSelectedBookId("");
+      setChapters([]);
+      setSelectedChapter("");
     }
     setPagesRead("");
     setReadingTime("");
     setNotes("");
     setValidationError(null);
-  }, [isOpen, books]);
+  }, [isOpen, books, preselectedBookId]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -559,6 +694,12 @@ export const DailyLogModal: React.FC<DailyLogModalProps> = ({
 
     const pages = parseInt(pagesRead, 10);
     const duration = readingTime ? parseInt(readingTime, 10) : 0;
+
+    const chapterName = selectedChapter.trim();
+    if (!chapterName) {
+      setValidationError("Please select the chapter you read today.");
+      return;
+    }
 
     // Check bounds: current_page + pagesRead must not exceed total_pages
     const potentialPage = book.current_page + pages;
@@ -578,7 +719,7 @@ export const DailyLogModal: React.FC<DailyLogModalProps> = ({
       bookId: selectedBookId,
       pagesRead: pages,
       readingTime: duration,
-      notes,
+      notes: chapterName ? `[CHAPTER:${chapterName}] ${notes}` : notes,
     });
   };
 
@@ -634,7 +775,7 @@ export const DailyLogModal: React.FC<DailyLogModalProps> = ({
                   <select
                     required
                     value={selectedBookId}
-                    onChange={(e) => setSelectedBookId(e.target.value)}
+                    onChange={(e) => handleBookChange(e.target.value)}
                     className="w-full px-4 py-2.5 text-sm glass-input bg-slate-900 border-white/10"
                   >
                     {activeBooks.map((b) => (
@@ -673,6 +814,33 @@ export const DailyLogModal: React.FC<DailyLogModalProps> = ({
                       />
                     </div>
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-slate-300 text-xs font-semibold block mb-1.5">
+                    Chapter Read Today <span className="text-rose-400">*</span>
+                  </label>
+                  <select
+                    required
+                    value={selectedChapter}
+                    onChange={(e) => setSelectedChapter(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs glass-input bg-slate-900 border-white/10"
+                  >
+                    {chapters.length > 0 ? (
+                      <>
+                        <option value="" className="bg-slate-900 text-slate-500">-- Select Chapter --</option>
+                        {chapters.map((ch) => (
+                          <option key={ch.name} value={ch.name} className="bg-slate-900 text-white">
+                            {ch.name} {ch.pages > 0 ? `(${ch.pages} pages)` : ""}
+                          </option>
+                        ))}
+                      </>
+                    ) : (
+                      <option value="" className="bg-slate-900 text-rose-400 font-semibold" disabled>
+                        -- No chapters defined (Define them in Library) --
+                      </option>
+                    )}
+                  </select>
                 </div>
 
                 <div>
