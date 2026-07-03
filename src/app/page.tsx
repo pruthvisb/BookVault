@@ -229,7 +229,7 @@ export default function RootPage() {
       await supabase.auth.signOut();
       localStorage.removeItem("bookvault_session_active");
     }
-    setSandboxMode(true);
+    setSandboxMode(false);
     setAuthenticated(false);
     showNotification("Logged out", "You have exited your active library vault session.", "info");
   };
