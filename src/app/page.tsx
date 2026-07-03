@@ -98,11 +98,22 @@ export default function RootPage() {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const explicitSandbox = sessionStorage.getItem("bookvault_sandbox_active") === "true";
+      const allowedEmail = process.env.NEXT_PUBLIC_ALLOWED_EMAIL;
       
       if (session) {
-        localStorage.setItem("bookvault_session_active", "true");
-        setSandboxMode(false);
-        setAuthenticated(true);
+        const userEmail = session.user?.email;
+        if (allowedEmail && userEmail && userEmail.trim().toLowerCase() !== allowedEmail.trim().toLowerCase()) {
+          // Unauthorized email: force sign-out immediately
+          await supabase.auth.signOut();
+          localStorage.removeItem("bookvault_session_active");
+          setSandboxMode(false);
+          setAuthenticated(false);
+          showNotification("Access Denied", "This vault is private. Your email is not whitelisted.", "error");
+        } else {
+          localStorage.setItem("bookvault_session_active", "true");
+          setSandboxMode(false);
+          setAuthenticated(true);
+        }
       } else if (explicitSandbox) {
         setAuthenticated(true);
       } else {
@@ -113,13 +124,25 @@ export default function RootPage() {
 
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const explicitSandbox = sessionStorage.getItem("bookvault_sandbox_active") === "true";
+      const allowedEmail = process.env.NEXT_PUBLIC_ALLOWED_EMAIL;
+
       if (session) {
-        localStorage.setItem("bookvault_session_active", "true");
-        setSandboxMode(false);
-        setAuthenticated(true);
-        loadAppData();
+        const userEmail = session.user?.email;
+        if (allowedEmail && userEmail && userEmail.trim().toLowerCase() !== allowedEmail.trim().toLowerCase()) {
+          // Unauthorized email: force sign-out immediately
+          await supabase.auth.signOut();
+          localStorage.removeItem("bookvault_session_active");
+          setSandboxMode(false);
+          setAuthenticated(false);
+          showNotification("Access Denied", "This vault is private. Your email is not whitelisted.", "error");
+        } else {
+          localStorage.setItem("bookvault_session_active", "true");
+          setSandboxMode(false);
+          setAuthenticated(true);
+          loadAppData();
+        }
       } else {
         // If logged out but NOT explicitly using sandbox
         if (!explicitSandbox) {
