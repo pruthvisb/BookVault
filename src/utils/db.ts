@@ -434,3 +434,32 @@ if (typeof window !== "undefined") {
     db.syncOfflineData();
   });
 }
+
+// --- Rental Library Helpers ---
+export interface RentalInfo {
+  issuedAt: string;     // ISO timestamp (date + time)
+  returnBy: string;     // YYYY-MM-DD (date)
+  reissueCount: number;
+  returnedAt?: string;  // ISO timestamp (date + time) when returned
+}
+
+export const parseRentalInfo = (notes?: string): RentalInfo | null => {
+  if (!notes) return null;
+  const match = notes.match(/\[RENTAL:(.*?)\|(.*?)\|(.*?)\|(.*?)\]/);
+  if (!match) return null;
+  return {
+    issuedAt: match[1],
+    returnBy: match[2],
+    reissueCount: parseInt(match[3], 10) || 0,
+    returnedAt: match[4] || undefined,
+  };
+};
+
+export const formatRentalInfo = (info: RentalInfo): string => {
+  return `[RENTAL:${info.issuedAt}|${info.returnBy}|${info.reissueCount}|${info.returnedAt || ""}]`;
+};
+
+export const cleanNotesFromRental = (notes?: string): string => {
+  if (!notes) return "";
+  return notes.replace(/\[RENTAL:.*?\]/, "").trim();
+};
