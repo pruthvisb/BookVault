@@ -28,6 +28,11 @@ const Library = dynamic(() => import("@/components/Library").then((mod) => mod.L
   ssr: false,
 });
 
+const RentLibrary = dynamic(() => import("@/components/RentLibrary").then((mod) => mod.RentLibrary), {
+  loading: () => <div className="w-full h-[60vh] bg-white/5 rounded-3xl animate-pulse" />,
+  ssr: false,
+});
+
 const Wishlist = dynamic(() => import("@/components/Wishlist").then((mod) => mod.Wishlist), {
   loading: () => <div className="w-full h-[60vh] bg-white/5 rounded-3xl animate-pulse" />,
   ssr: false,
@@ -486,6 +491,21 @@ export default function RootPage() {
                   onOpenDailyLog={handleOpenDailyLog}
                   onOpenAddBook={() => {
                     setEditingBook(null);
+                    setIsAddBookOpen(true);
+                  }}
+                />
+              )}
+
+              {activeTab === "rent" && (
+                <RentLibrary
+                  books={books}
+                  onUpdateBook={handleUpdateBook}
+                  onOpenAddBook={() => {
+                    setEditingBook(null);
+                    setIsAddBookOpen(true);
+                  }}
+                  onOpenEditBook={(book) => {
+                    setEditingBook(book);
                     setIsAddBookOpen(true);
                   }}
                 />

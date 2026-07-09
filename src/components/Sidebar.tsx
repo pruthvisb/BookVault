@@ -20,6 +20,7 @@ import {
   X,
   Flame,
   User,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -77,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
     { id: "library", label: "My Library", icon: <BookOpen className="h-5 w-5" /> },
+    { id: "rent", label: "Rent Library", icon: <Clock className="h-5 w-5" /> },
     { id: "wishlist", label: "Wishlist", icon: <Heart className="h-5 w-5" /> },
     { id: "history", label: "Reading History", icon: <History className="h-5 w-5" /> },
     { id: "calendar", label: "Calendar View", icon: <Calendar className="h-5 w-5" /> },
