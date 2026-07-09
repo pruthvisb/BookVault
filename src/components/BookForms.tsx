@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Book, ReadingLog } from "@/utils/db";
+import { Book, ReadingLog, parseRentalInfo, formatRentalInfo } from "@/utils/db";
 import { X, Upload, BookOpen, Clock, Tag, Link2, IndianRupee, Trash2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -70,6 +70,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
   const [priority, setPriority] = useState<Book["priority"]>("Medium");
   const [purchaseLink, setPurchaseLink] = useState("");
   const [source, setSource] = useState("Bought");
+  const [returnDate, setReturnDate] = useState("");
 
   useEffect(() => {
     if (initialBook) {
@@ -82,9 +83,18 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       setPublisher(initialBook.publisher || "");
       setPurchaseDate(initialBook.purchase_date || "");
       
+      let rawNotes = initialBook.notes || "";
+      const rentalInfo = parseRentalInfo(rawNotes);
+      if (rentalInfo) {
+        setReturnDate(rentalInfo.returnBy);
+        rawNotes = rawNotes.replace(/\[RENTAL:.*?\]/, "").trim();
+      } else {
+        setReturnDate("");
+      }
+
       // Extract chapters metadata if present
-      if (initialBook.notes) {
-        const chaptersMatch = initialBook.notes.match(/\[CHAPTERS:(.*?)\]\s*([\s\S]*)/);
+      if (rawNotes) {
+        const chaptersMatch = rawNotes.match(/\[CHAPTERS:(.*?)\]\s*([\s\S]*)/);
         if (chaptersMatch) {
           const rawChapters = chaptersMatch[1].split("|").filter(Boolean);
           const parsed = rawChapters.map((raw) => {
@@ -100,7 +110,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
           setNotes(chaptersMatch[2]);
         } else {
           setChaptersList([]);
-          setNotes(initialBook.notes);
+          setNotes(rawNotes);
         }
       } else {
         setChaptersList([]);
@@ -167,6 +177,24 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       ? `[CHAPTERS:${validChapters.map((c) => `${c.name.trim()}:${c.pages}`).join("|")}] `
       : "";
 
+    let finalNotes = notes;
+    if ((source === "Borrowed" || source === "Library") && returnDate) {
+      let issuedAt = new Date().toISOString();
+      let reissueCount = 0;
+      let returnedAt = "";
+
+      if (initialBook && initialBook.notes) {
+        const prevRental = parseRentalInfo(initialBook.notes);
+        if (prevRental) {
+          issuedAt = prevRental.issuedAt;
+          reissueCount = prevRental.reissueCount;
+          returnedAt = prevRental.returnedAt || "";
+        }
+      }
+      const rentalTag = `[RENTAL:${issuedAt}|${returnDate}|${reissueCount}|${returnedAt}] `;
+      finalNotes = `${rentalTag}${finalNotes}`;
+    }
+
     const bookData: any = {
       title,
       author,
@@ -176,12 +204,12 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       isbn,
       publisher,
       purchase_date: purchaseDate || null,
-      notes: `${chaptersTag}${notes}`,
+      notes: `${chaptersTag}${finalNotes}`,
       is_favorite: isFavorite,
       cover_url: coverUrl,
     };
 
-    bookData.price = price ? parseFloat(price) : null;
+    bookData.price = (source === "Borrowed" || source === "Library") ? null : (price ? parseFloat(price) : null);
     bookData.purchase_link = purchaseLink;
     bookData.source = source;
 
@@ -408,21 +436,23 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                     </select>
                   </div>
 
-                  <div>
-                    <label className="text-slate-300 text-xs font-semibold block mb-1.5">Price Paid (₹)</label>
-                    <div className="relative">
-                      <IndianRupee className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        placeholder="e.g. 12.50"
-                        className="w-full pl-9 pr-4 py-2.5 text-sm glass-input"
-                      />
+                  {source !== "Borrowed" && source !== "Library" && (
+                    <div>
+                      <label className="text-slate-300 text-xs font-semibold block mb-1.5">Price Paid (₹)</label>
+                      <div className="relative">
+                        <IndianRupee className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          placeholder="e.g. 12.50"
+                          className="w-full pl-9 pr-4 py-2.5 text-sm glass-input"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {source === "Online" && (
                     <div>
@@ -435,6 +465,22 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
                           onChange={(e) => setPurchaseLink(e.target.value)}
                           placeholder="e.g. Store or PDF URL"
                           className="w-full pl-9 pr-4 py-2.5 text-sm glass-input"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(source === "Borrowed" || source === "Library") && (
+                    <div>
+                      <label className="text-slate-300 text-xs font-semibold block mb-1.5">Return Due Date</label>
+                      <div className="relative">
+                        <Clock className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="date"
+                          required
+                          value={returnDate}
+                          onChange={(e) => setReturnDate(e.target.value)}
+                          className="w-full pl-9 pr-4 py-2.5 text-sm glass-input bg-slate-900"
                         />
                       </div>
                     </div>
@@ -522,9 +568,12 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
 
                   {status !== "Wishlist" && (
                     <div>
-                      <label className="text-slate-300 text-xs font-semibold block mb-1.5">Purchase Date</label>
+                      <label className="text-slate-300 text-xs font-semibold block mb-1.5">
+                        {source === "Borrowed" || source === "Library" ? "Date Borrowed" : "Purchase Date"}
+                      </label>
                       <input
                         type="date"
+                        required
                         value={purchaseDate}
                         onChange={(e) => setPurchaseDate(e.target.value)}
                         className="w-full px-4 py-2 text-xs glass-input bg-slate-900"
