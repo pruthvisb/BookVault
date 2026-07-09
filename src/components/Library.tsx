@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Book, ReadingLog, parseBookOrder, formatBookOrder, cleanNotesFromOrder } from "@/utils/db";
+import { Book, ReadingLog, parseBookOrder, formatBookOrder, cleanNotesFromOrder, parseRentalInfo } from "@/utils/db";
 import { SortableGrid } from "./SortableGrid";
 import {
   Search,
@@ -89,7 +89,7 @@ export const Library: React.FC<LibraryProps> = ({
     }
   }, [books, isDragging]);
 
-  const libraryBooks = localBooks.filter((b) => b.status !== "Wishlist");
+  const libraryBooks = localBooks.filter((b) => b.status !== "Wishlist" && !parseRentalInfo(b.notes));
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [ratingFilter, setRatingFilter] = useState<number | "All">("All");
