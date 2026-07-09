@@ -15,7 +15,12 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-emerald?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Vercel](https://img.shields.io/badge/Vercel-Deploy-black?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Try_It_Now!-indigo?style=for-the-badge&logo=vercel&logoColor=white)](https://bookvault-demo.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
+
+<p align="center">
+  👉 <b><a href="https://bookvault-demo.vercel.app/">Try the Live Demo Instantly!</a></b> 👈
+</p>
 
 <p align="center">
   <a href="#-introduction">Introduction</a> •
@@ -69,15 +74,29 @@ Equipped with a **Dual-State Database Layer**, BookVault works completely offlin
 
 ---
 
-## 📸 Screenshots & Layout Preview
+## 📸 Screenshots & Showcase
 
-| Dashboard View (Dark Mode) | Feature Illustration |
-|:---:|:---:|
-| ![Dashboard Mockup](public/dashboard_mockup.png) | ![Features Illustration](public/features_illustration.png) |
+### 📊 Dashboard Workspace (Dark Theme)
+Beautiful glassmorphic charts tracking streak indicators, average reading speeds, daily page logs, and a dynamic pages-read SVG circular gauge.
+![Dashboard Workspace](public/dashboard_mockup.png)
 
-| System Architecture Diagram | Open Graph Preview |
-|:---:|:---:|
-| ![System Architecture Diagram](public/architecture_diagram.png) | ![Open Graph Preview](public/open_graph.png) |
+---
+
+### 🎨 Visual Layout & App Assets
+A system mock-up representing the core feature views, streaks badges, and aesthetic book cover components.
+![Visual Assets Layout](public/features_illustration.png)
+
+---
+
+### 📐 System Architecture Diagram
+Chronological data routing pipelines coordinating cloud/sandbox synchronization.
+![System Architecture Diagram](public/architecture_diagram.png)
+
+---
+
+### 📢 Open Graph Branding
+Premium brand image for social sharing card previews.
+![Open Graph Brand Card](public/open_graph.png)
 
 ---
 
@@ -164,6 +183,15 @@ BookVault/
 ├── supabase_schema.sql           # PostgreSQL Database Schema template
 ├── package.json
 └── tsconfig.json
+```
+
+---
+
+## ⚡ Quick Start (3-Step Run)
+
+For a setup-free local run using the Local Storage sandbox:
+```bash
+git clone https://github.com/pruthvisb/BookVault.git && cd BookVault && npm install && npm run dev
 ```
 
 ---
@@ -283,14 +311,64 @@ BookVault allows you to test the app instantly without signing up.
 
 ---
 
+## 🧪 Quality Control & Testing
+
+To maintain the high performance and type safety of BookVault's 60 FPS interfaces, we run the following quality verification commands:
+
+### 1. Code Linting & Style Checks
+Ensure code adheres to project style standards and Next.js parameters:
+```bash
+npm run lint
+```
+
+### 2. Turbopack Production Build
+Validate that the entire App Router code compiles cleanly and builds optimized static bundles:
+```bash
+npm run build
+```
+
+---
+
+## ❓ FAQ & Troubleshooting
+
+<details>
+<summary><b>1. Why does my dragged book snap back to its original position?</b></summary>
+<br />
+Make sure your grid filter / sorting dropdown is set to <b>Custom Order</b>. Natural drag-and-drop reordering is only active under custom sorting configurations. Under other sorts (e.g. Title, Progress, Date), the grid enforces its preset sort sequence.
+</details>
+
+<details>
+<summary><b>2. Why are my local changes not showing up in Supabase?</b></summary>
+<br />
+Verify that you are logged in (Sandbox changes are strictly stored in the browser's SessionStorage and do not sync to the cloud database). If logged in and offline, BookVault queues your changes locally; they will automatically write to Supabase once an active network connection is established.
+</details>
+
+<details>
+<summary><b>3. I am getting API connection errors during database setup</b></summary>
+<br />
+Ensure you have created the `.env.local` file in the root directory and populated it with the exact keys found under <b>Settings ➔ API</b> in your Supabase project dashboard.
+</details>
+
+<details>
+<summary><b>4. How do I run SQL schema commands?</b></summary>
+<br />
+Ensure you copy the contents of the `supabase_schema.sql` file, open the <b>SQL Editor</b> in your Supabase dashboard, click "New query", paste the contents, and click <b>Run</b>.
+</details>
+
+---
+
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these guidelines:
+Contributions are welcome! We align with the **Contributor Covenant Code of Conduct**.
+
+### Development Workflow
 1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/your-feature-name`.
-3. Commit your changes: `git commit -m 'Add your feature description'`.
-4. Push to the branch: `git push origin feature/your-feature-name`.
-5. Open a Pull Request.
+2. Create a clean feature branch: `git checkout -b feature/your-feature-name`.
+3. Make your modifications, adhering to standard ESLint rules.
+4. Run code validation checks: `npm run lint` and `npm run build`.
+5. Commit your changes: `git commit -m 'feat: add some amazing feature'`.
+6. Push to the branch: `git push origin feature/your-feature-name`.
+7. Open a Pull Request.
 
 ---
 
