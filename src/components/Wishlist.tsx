@@ -52,14 +52,21 @@ export const Wishlist: React.FC<WishlistProps> = ({
   const [deliveryDate, setDeliveryDate] = useState("");
 
   const handleDragEnd = async () => {
-    setIsDragging(false);
-
-    // Sync changes to Supabase at drag end
-    for (const localBook of localBooks) {
-      const originalBook = books.find((b) => b.id === localBook.id);
-      if (originalBook && originalBook.notes !== localBook.notes) {
-        await onUpdateBook(localBook.id, { notes: localBook.notes });
+    try {
+      const updates = [];
+      for (const localBook of localBooks) {
+        const originalBook = books.find((b) => b.id === localBook.id);
+        if (originalBook && originalBook.notes !== localBook.notes) {
+          updates.push(onUpdateBook(localBook.id, { notes: localBook.notes }));
+        }
       }
+      if (updates.length > 0) {
+        await Promise.all(updates);
+      }
+    } catch (err) {
+      console.error("Failed to sync drag order:", err);
+    } finally {
+      setIsDragging(false);
     }
   };
 
@@ -204,23 +211,21 @@ export const Wishlist: React.FC<WishlistProps> = ({
           onDragStart={() => setIsDragging(true)}
           onDragEnd={handleDragEnd}
           onReorder={(sourceIndex, targetIndex) => {
-            const sourceBook = filteredBooks[sourceIndex];
-            const targetBook = filteredBooks[targetIndex];
+            const newFiltered = [...filteredBooks];
+            const [removed] = newFiltered.splice(sourceIndex, 1);
+            newFiltered.splice(targetIndex, 0, removed);
 
-            const sourceOrder = parseBookOrder(sourceBook.notes);
-            const targetOrder = parseBookOrder(targetBook.notes);
-
-            const cleanSourceNotes = cleanNotesFromOrder(sourceBook.notes);
-            const cleanTargetNotes = cleanNotesFromOrder(targetBook.notes);
-
-            const newSourceNotes = `${formatBookOrder(targetOrder)} ${cleanSourceNotes}`.trim();
-            const newTargetNotes = `${formatBookOrder(sourceOrder)} ${cleanTargetNotes}`.trim();
+            const updatedBooks = newFiltered.map((book, i) => {
+              const newOrder = i * 1000;
+              const cleanNotes = cleanNotesFromOrder(book.notes);
+              const newNotes = `${formatBookOrder(newOrder)} ${cleanNotes}`.trim();
+              return { ...book, notes: newNotes };
+            });
 
             setLocalBooks((prev) =>
               prev.map((b) => {
-                if (b.id === sourceBook.id) return { ...b, notes: newSourceNotes };
-                if (b.id === targetBook.id) return { ...b, notes: newTargetNotes };
-                return b;
+                const updated = updatedBooks.find((ub) => ub.id === b.id);
+                return updated ? updated : b;
               })
             );
           }}
