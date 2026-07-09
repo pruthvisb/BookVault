@@ -436,30 +436,73 @@ if (typeof window !== "undefined") {
 }
 
 // --- Rental Library Helpers ---
-export interface RentalInfo {
+export interface RentalEvent {
   issuedAt: string;     // ISO timestamp (date + time)
   returnBy: string;     // YYYY-MM-DD (date)
-  reissueCount: number;
+}
+
+export interface RentalInfo {
   returnedAt?: string;  // ISO timestamp (date + time) when returned
+  events: RentalEvent[]; // Timeline of issue/reissue events (first is initial issue, rest are reissues)
 }
 
 export const parseRentalInfo = (notes?: string): RentalInfo | null => {
   if (!notes) return null;
-  const match = notes.match(/\[RENTAL:(.*?)\|(.*?)\|(.*?)\|(.*?)\]/);
-  if (!match) return null;
-  return {
-    issuedAt: match[1],
-    returnBy: match[2],
-    reissueCount: parseInt(match[3], 10) || 0,
-    returnedAt: match[4] || undefined,
-  };
+
+  // Try parsing new history format: [RENTAL:returned_at;issued_at_1,due_1|issued_at_2,due_2|...]
+  const historyMatch = notes.match(/\[RENTAL:([^;]*?);(.*?)\]/);
+  if (historyMatch) {
+    const returnedAt = historyMatch[1] || undefined;
+    const rawEvents = historyMatch[2].split("|").filter(Boolean);
+    const events = rawEvents.map(raw => {
+      const [issuedAt, returnBy] = raw.split(",");
+      return { issuedAt, returnBy };
+    });
+    if (events.length > 0) {
+      return { returnedAt, events };
+    }
+  }
+
+  // Fallback to legacy format: [RENTAL:issued_at|return_by|reissue_count|returned_at]
+  const legacyMatch = notes.match(/\[RENTAL:(.*?)\|(.*?)\|(.*?)\|(.*?)\]/);
+  if (legacyMatch) {
+    const issuedAt = legacyMatch[1];
+    const returnBy = legacyMatch[2];
+    const reissueCount = parseInt(legacyMatch[3], 10) || 0;
+    const returnedAt = legacyMatch[4] || undefined;
+
+    const events: RentalEvent[] = [{ issuedAt, returnBy }];
+    for (let i = 0; i < reissueCount; i++) {
+      events.push({ issuedAt, returnBy });
+    }
+    return { returnedAt, events };
+  }
+
+  return null;
 };
 
 export const formatRentalInfo = (info: RentalInfo): string => {
-  return `[RENTAL:${info.issuedAt}|${info.returnBy}|${info.reissueCount}|${info.returnedAt || ""}]`;
+  const eventsStr = info.events.map(ev => `${ev.issuedAt},${ev.returnBy}`).join("|");
+  return `[RENTAL:${info.returnedAt || ""};${eventsStr}]`;
 };
 
 export const cleanNotesFromRental = (notes?: string): string => {
   if (!notes) return "";
   return notes.replace(/\[RENTAL:.*?\]/, "").trim();
+};
+
+// --- Manual Book Order Helpers ---
+export const parseBookOrder = (notes?: string): number => {
+  if (!notes) return 999999;
+  const match = notes.match(/\[ORDER:(\d+)\]/);
+  return match ? parseInt(match[1], 10) : 999999;
+};
+
+export const formatBookOrder = (order: number): string => {
+  return `[ORDER:${order}]`;
+};
+
+export const cleanNotesFromOrder = (notes?: string): string => {
+  if (!notes) return "";
+  return notes.replace(/\[ORDER:\d+\]/, "").trim();
 };

@@ -499,7 +499,9 @@ export default function RootPage() {
               {activeTab === "rent" && (
                 <RentLibrary
                   books={books}
+                  readingLogs={readingLogs}
                   onUpdateBook={handleUpdateBook}
+                  onDeleteBook={handleDeleteBook}
                   onOpenAddBook={() => {
                     setEditingBook(null);
                     setIsAddBookOpen(true);
@@ -508,6 +510,7 @@ export default function RootPage() {
                     setEditingBook(book);
                     setIsAddBookOpen(true);
                   }}
+                  onOpenDailyLog={handleOpenDailyLog}
                 />
               )}
 
@@ -572,6 +575,7 @@ export default function RootPage() {
         }}
         initialBook={editingBook}
         allowedStatuses={activeTab === "wishlist" ? ["Wishlist"] : ["Reading", "Completed", "Not Started"]}
+        books={books}
       />
 
       <DailyLogModal

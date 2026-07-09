@@ -24,6 +24,7 @@ interface AddBookModalProps {
   onSubmit: (book: any) => void;
   initialBook?: Book | null;
   allowedStatuses?: Book["status"][];
+  books: Book[];
 }
 
 interface DailyLogModalProps {
@@ -49,6 +50,7 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
   onSubmit,
   initialBook,
   allowedStatuses,
+  books,
 }) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
@@ -71,8 +73,10 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
   const [purchaseLink, setPurchaseLink] = useState("");
   const [source, setSource] = useState("Bought");
   const [returnDate, setReturnDate] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    setErrorMsg(null);
     if (initialBook) {
       setTitle(initialBook.title);
       setAuthor(initialBook.author);
@@ -85,8 +89,8 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       
       let rawNotes = initialBook.notes || "";
       const rentalInfo = parseRentalInfo(rawNotes);
-      if (rentalInfo) {
-        setReturnDate(rentalInfo.returnBy);
+      if (rentalInfo && rentalInfo.events.length > 0) {
+        setReturnDate(rentalInfo.events[rentalInfo.events.length - 1].returnBy);
         rawNotes = rawNotes.replace(/\[RENTAL:.*?\]/, "").trim();
       } else {
         setReturnDate("");
@@ -180,18 +184,22 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
     let finalNotes = notes;
     if ((source === "Borrowed" || source === "Library") && returnDate) {
       let issuedAt = new Date().toISOString();
-      let reissueCount = 0;
       let returnedAt = "";
+      let events = [{ issuedAt, returnBy: returnDate }];
 
       if (initialBook && initialBook.notes) {
         const prevRental = parseRentalInfo(initialBook.notes);
         if (prevRental) {
-          issuedAt = prevRental.issuedAt;
-          reissueCount = prevRental.reissueCount;
           returnedAt = prevRental.returnedAt || "";
+          const activeEvent = prevRental.events[prevRental.events.length - 1];
+          if (activeEvent && activeEvent.returnBy !== returnDate) {
+            events = [...prevRental.events, { issuedAt, returnBy: returnDate }];
+          } else {
+            events = prevRental.events;
+          }
         }
       }
-      const rentalTag = `[RENTAL:${issuedAt}|${returnDate}|${reissueCount}|${returnedAt}] `;
+      const rentalTag = formatRentalInfo({ returnedAt, events }) + " ";
       finalNotes = `${rentalTag}${finalNotes}`;
     }
 
@@ -220,6 +228,17 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       bookData.current_page = initialBook.current_page;
     } else {
       bookData.current_page = 0;
+    }
+
+    const isDuplicate = books.some((b) => {
+      if (initialBook && b.id === initialBook.id) return false;
+      return b.title.trim().toLowerCase() === title.trim().toLowerCase() && 
+             b.author.trim().toLowerCase() === author.trim().toLowerCase();
+    });
+
+    if (isDuplicate) {
+      setErrorMsg(`"${title}" by ${author} is already in your vault!`);
+      return;
     }
 
     onSubmit(bookData);
@@ -256,6 +275,12 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
             <h3 className="text-xl font-bold text-white mb-6">
               {initialBook ? "Edit Book" : "Add Book to Vault"}
             </h3>
+
+            {errorMsg && (
+              <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-455 text-xs font-semibold font-mono">
+                ⚠ {errorMsg}
+              </div>
+            )}
 
             <form onSubmit={handleFormSubmit} className="space-y-6">
               {/* Cover Picker Section */}
