@@ -439,6 +439,7 @@ if (typeof window !== "undefined") {
 export interface RentalEvent {
   issuedAt: string;     // ISO timestamp (date + time)
   returnBy: string;     // YYYY-MM-DD (date)
+  returnedAt?: string;  // ISO timestamp (date + time) when returned
 }
 
 export interface RentalInfo {
@@ -449,14 +450,17 @@ export interface RentalInfo {
 export const parseRentalInfo = (notes?: string): RentalInfo | null => {
   if (!notes) return null;
 
-  // Try parsing new history format: [RENTAL:returned_at;issued_at_1,due_1|issued_at_2,due_2|...]
+  // Try parsing new history format: [RENTAL:returned_at;issued_at_1,due_1,returned_1|issued_at_2,due_2,returned_2|...]
   const historyMatch = notes.match(/\[RENTAL:([^;]*?);(.*?)\]/);
   if (historyMatch) {
     const returnedAt = historyMatch[1] || undefined;
     const rawEvents = historyMatch[2].split("|").filter(Boolean);
     const events = rawEvents.map(raw => {
-      const [issuedAt, returnBy] = raw.split(",");
-      return { issuedAt, returnBy };
+      const parts = raw.split(",");
+      const issuedAt = parts[0];
+      const returnBy = parts[1];
+      const eventReturnedAt = parts[2] || undefined;
+      return { issuedAt, returnBy, returnedAt: eventReturnedAt };
     });
     if (events.length > 0) {
       return { returnedAt, events };
@@ -482,7 +486,7 @@ export const parseRentalInfo = (notes?: string): RentalInfo | null => {
 };
 
 export const formatRentalInfo = (info: RentalInfo): string => {
-  const eventsStr = info.events.map(ev => `${ev.issuedAt},${ev.returnBy}`).join("|");
+  const eventsStr = info.events.map(ev => `${ev.issuedAt},${ev.returnBy},${ev.returnedAt || ""}`).join("|");
   return `[RENTAL:${info.returnedAt || ""};${eventsStr}]`;
 };
 

@@ -129,12 +129,12 @@ export function SortableGrid<T extends { id: string }>({
     if (sortBy !== "custom") return;
     if (e.button !== 0) return; // Only left click / primary touch
 
-    // If clicking on an interactive element, do not start drag
+    // If clicking on a child interactive element, do not start drag
     const target = e.target as HTMLElement;
     const isInteractive = target.closest(
       "button, a, input, select, textarea, [role='button'], .cursor-pointer"
     );
-    if (isInteractive) return;
+    if (isInteractive && isInteractive !== e.currentTarget) return;
 
     // Prevent text selection during drag
     e.preventDefault();

@@ -200,9 +200,18 @@ export const RentLibrary: React.FC<RentLibraryProps> = ({
 
   const handleReturnBook = async (book: Book, rental: RentalInfo) => {
     try {
+      const returnTimestamp = new Date().toISOString();
+      const updatedEvents = [...rental.events];
+      if (updatedEvents.length > 0) {
+        updatedEvents[updatedEvents.length - 1] = {
+          ...updatedEvents[updatedEvents.length - 1],
+          returnedAt: returnTimestamp,
+        };
+      }
+
       const updatedRental: RentalInfo = {
-        ...rental,
-        returnedAt: new Date().toISOString(),
+        returnedAt: returnTimestamp,
+        events: updatedEvents,
       };
 
       const chaptersMatch = book.notes?.match(/\[CHAPTERS:.*?\]\s*/);
@@ -271,9 +280,13 @@ export const RentLibrary: React.FC<RentLibraryProps> = ({
     const dateStr = nextTwoWeeks.toISOString().split("T")[0];
 
     try {
+      const currentRental = parseRentalInfo(book.notes);
+      const previousEvents = currentRental ? currentRental.events : [];
+
       const updatedRental: RentalInfo = {
         returnedAt: undefined,
         events: [
+          ...previousEvents,
           { issuedAt: new Date().toISOString(), returnBy: dateStr }
         ]
       };
@@ -934,7 +947,7 @@ export const RentLibrary: React.FC<RentLibraryProps> = ({
                         <div className="space-y-4">
                           {r.events.map((ev, idx) => {
                             const nextEvent = r.events[idx + 1];
-                            const periodEnd = nextEvent?.issuedAt || r.returnedAt;
+                            const periodEnd = ev.returnedAt || nextEvent?.issuedAt || r.returnedAt;
                             const pagesRead = getPagesInPeriod(ev.issuedAt, periodEnd);
                             const percent = Math.min(100, Math.round((pagesRead / selectedBook.total_pages) * 100));
                             
@@ -971,7 +984,9 @@ export const RentLibrary: React.FC<RentLibraryProps> = ({
 
                                 {/* Period status details */}
                                 <div className="text-[10px] font-mono text-slate-500">
-                                  {nextEvent ? (
+                                  {ev.returnedAt ? (
+                                    <span className="text-emerald-400">Returned on {formatDateTime(ev.returnedAt)}</span>
+                                  ) : nextEvent ? (
                                     <span>Reissued on {formatDateTime(nextEvent.issuedAt)}</span>
                                   ) : r.returnedAt ? (
                                     <span className="text-emerald-400">Returned on {formatDateTime(r.returnedAt)}</span>
